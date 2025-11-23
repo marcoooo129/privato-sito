@@ -70,6 +70,16 @@ const App: React.FC = () => {
     setProducts(prev => [newProduct, ...prev]);
   };
 
+  const handleRemoveProduct = (id: string) => {
+    if (window.confirm('Are you sure you want to delete this product?')) {
+      setProducts(prev => prev.filter(p => p.id !== id));
+    }
+  };
+
+  const handleUpdateProduct = (updatedProduct: Product) => {
+    setProducts(prev => prev.map(p => p.id === updatedProduct.id ? updatedProduct : p));
+  };
+
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
     e.currentTarget.src = FALLBACK_IMAGE;
     e.currentTarget.onerror = null;
@@ -165,7 +175,10 @@ const App: React.FC = () => {
       <AdminDashboard
         isOpen={isAdminOpen}
         onClose={() => setIsAdminOpen(false)}
+        products={products}
         onAddProduct={handleAddProduct}
+        onRemoveProduct={handleRemoveProduct}
+        onUpdateProduct={handleUpdateProduct}
       />
     </div>
   );

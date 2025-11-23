@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+
+import React, { useState, useRef } from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Legend } from 'recharts';
 import { SALES_DATA } from '../constants';
 import { Product, Category } from '../types';
@@ -6,36 +7,56 @@ import { Product, Category } from '../types';
 interface AdminDashboardProps {
   isOpen: boolean;
   onClose: () => void;
-  onAddProduct?: (product: Product) => void;
+  products: Product[]; // Pass all products to display list
+  onAddProduct: (product: Product) => void;
+  onRemoveProduct: (id: string) => void;
+  onUpdateProduct: (product: Product) => void;
 }
 
-export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose, onAddProduct }) => {
+export const AdminDashboard: React.FC<AdminDashboardProps> = ({ 
+  isOpen, 
+  onClose, 
+  products, 
+  onAddProduct, 
+  onRemoveProduct, 
+  onUpdateProduct 
+}) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [credentials, setCredentials] = useState({ username: '', password: '' });
   const [authError, setAuthError] = useState('');
 
   const [activeTab, setActiveTab] = useState<'overview' | 'inventory'>('overview');
   
-  // New Product Form State
-  const [newProduct, setNewProduct] = useState<Partial<Product>>({
+  // Edit Mode State
+  const [editingId, setEditingId] = useState<string | null>(null);
+
+  // Form State
+  const [productForm, setProductForm] = useState<Partial<Product>>({
     name: '',
     price: 0,
     category: Category.NECKLACE,
     material: '',
     description: '',
-    image: 'https://placehold.co/800x800/f5f5f4/292524?text=New+Item'
+    image: ''
   });
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   if (!isOpen) return null;
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Normalize inputs: trim whitespace and lowercase username
+    const usernameInput = credentials.username.trim().toLowerCase();
+    const passwordInput = credentials.password.trim();
+
     // Hardcoded credentials for demo purpose
-    if (credentials.username === 'admin' && credentials.password === 'admin123') {
+    if (usernameInput === 'admin' && passwordInput === 'admin123') {
       setIsAuthenticated(true);
       setAuthError('');
     } else {
-      setAuthError('Invalid username or password');
+      setAuthError('Login Failed. Please use: admin / admin123');
     }
   };
 
@@ -51,34 +72,73 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose,
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const value = e.target.name === 'price' ? parseFloat(e.target.value) : e.target.value;
-    setNewProduct({ ...newProduct, [e.target.name]: value });
+    setProductForm({ ...productForm, [e.target.name]: value });
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        // Set the base64 string as the image
+        setProductForm(prev => ({ ...prev, image: reader.result as string }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const resetForm = () => {
+    setProductForm({
+      name: '',
+      price: 0,
+      category: Category.NECKLACE,
+      material: '',
+      description: '',
+      image: ''
+    });
+    setEditingId(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const startEditing = (product: Product) => {
+    setProductForm(product);
+    setEditingId(product.id);
+    // Scroll to form top
+    const formElement = document.getElementById('product-form-container');
+    if (formElement) formElement.scrollIntoView({ behavior: 'smooth' });
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (onAddProduct && newProduct.name && newProduct.price) {
+    
+    // Default placeholder if image is empty
+    const finalImage = productForm.image || 'https://placehold.co/800x800/f5f5f4/292524?text=' + encodeURIComponent(productForm.name || 'Item');
+
+    if (editingId) {
+      // Update Mode
+      const updatedProduct: Product = {
+        ...(productForm as Product),
+        id: editingId,
+        image: finalImage
+      };
+      onUpdateProduct(updatedProduct);
+      alert('Product updated successfully!');
+    } else {
+      // Add Mode
       const productToAdd: Product = {
         id: Date.now().toString(),
-        name: newProduct.name!,
-        price: newProduct.price!,
-        category: newProduct.category as Category,
-        material: newProduct.material || 'Standard',
-        description: newProduct.description || '',
-        image: newProduct.image || 'https://placehold.co/800x800/f5f5f4/292524?text=' + encodeURIComponent(newProduct.name!),
+        name: productForm.name!,
+        price: productForm.price!,
+        category: productForm.category as Category,
+        material: productForm.material || 'Standard',
+        description: productForm.description || '',
+        image: finalImage,
       };
       onAddProduct(productToAdd);
-      
-      // Reset form
-      setNewProduct({
-        name: '',
-        price: 0,
-        category: Category.NECKLACE,
-        material: '',
-        description: '',
-        image: 'https://placehold.co/800x800/f5f5f4/292524?text=New+Item'
-      });
       alert('Product added successfully!');
     }
+    
+    resetForm();
   };
 
   // Login Screen
@@ -132,9 +192,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose,
               Login
             </button>
             
-            <p className="text-[10px] text-center text-stone-400 mt-4">
-              Demo Credentials: admin / admin123
-            </p>
+            <div className="text-center mt-4 p-2 bg-stone-50 rounded border border-stone-100">
+               <p className="text-[10px] text-stone-400 uppercase tracking-wider mb-1">Demo Credentials</p>
+               <p className="text-xs font-mono text-stone-600">user: admin</p>
+               <p className="text-xs font-mono text-stone-600">pass: admin123</p>
+            </div>
           </form>
         </div>
       </div>
@@ -144,7 +206,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose,
   // Dashboard Screen
   return (
     <div className="fixed inset-0 z-[70] bg-stone-900/50 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-white w-full max-w-5xl h-[90vh] overflow-hidden rounded-lg shadow-2xl flex flex-col animate-fade-in-up">
+      <div className="bg-white w-full max-w-6xl h-[90vh] overflow-hidden rounded-lg shadow-2xl flex flex-col animate-fade-in-up">
         {/* Header */}
         <div className="flex justify-between items-center px-8 py-6 border-b border-stone-100 bg-stone-50">
            <div className="flex items-center space-x-8">
@@ -162,7 +224,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose,
                     onClick={() => setActiveTab('inventory')}
                     className={`px-4 py-1.5 text-xs font-bold uppercase tracking-wider rounded-sm transition-colors ${activeTab === 'inventory' ? 'bg-stone-900 text-white' : 'text-stone-500 hover:bg-stone-100'}`}
                 >
-                    Add Product
+                    Inventory
                 </button>
             </div>
            </div>
@@ -217,125 +279,194 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose,
                   </AreaChart>
                 </ResponsiveContainer>
               </div>
-    
-               {/* Charts Row 2 */}
-              <div className="h-96 w-full">
-                <h3 className="font-serif text-xl mb-6 text-stone-800">Traffic vs. Sales</h3>
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={SALES_DATA}>
-                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e5e5" />
-                     <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fill: '#78716c'}} />
-                     <YAxis yAxisId="left" orientation="left" stroke="#1c1917" axisLine={false} tickLine={false} />
-                     <YAxis yAxisId="right" orientation="right" stroke="#D4AF37" axisLine={false} tickLine={false} />
-                     <Tooltip 
-                        contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e5e5', borderRadius: '0px' }}
-                     />
-                     <Legend />
-                     <Bar yAxisId="left" dataKey="visitors" fill="#1c1917" barSize={20} />
-                     <Bar yAxisId="right" dataKey="sales" fill="#D4AF37" barSize={20} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
             </div>
           ) : (
-            <div className="p-8 max-w-3xl mx-auto">
-                 <div className="text-center mb-10">
-                    <h3 className="font-serif text-3xl text-stone-900 mb-2">New Arrival</h3>
-                    <p className="text-stone-500">Add a new item to the collection.</p>
+            <div className="p-8 max-w-4xl mx-auto space-y-12">
+                 {/* Product Form */}
+                 <div id="product-form-container" className="bg-stone-50 p-8 rounded-lg border border-stone-100">
+                    <div className="text-center mb-8">
+                        <h3 className="font-serif text-2xl text-stone-900 mb-2">
+                           {editingId ? 'Edit Product' : 'Add New Arrival'}
+                        </h3>
+                        <p className="text-stone-500 text-sm">
+                           {editingId ? 'Modify existing item details.' : 'Add a new item to the collection.'}
+                        </p>
+                    </div>
+
+                    <form onSubmit={handleSubmit} className="space-y-6">
+                        <div className="grid grid-cols-2 gap-6">
+                            <div className="space-y-2">
+                                <label className="text-xs uppercase font-bold tracking-widest text-stone-500">Product Name</label>
+                                <input 
+                                    name="name"
+                                    value={productForm.name}
+                                    onChange={handleInputChange}
+                                    required
+                                    type="text" 
+                                    className="w-full p-3 bg-white border border-stone-200 focus:border-stone-900 outline-none transition-colors"
+                                    placeholder="e.g. Anello Luce"
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-xs uppercase font-bold tracking-widest text-stone-500">Price (€)</label>
+                                <input 
+                                    name="price"
+                                    value={productForm.price}
+                                    onChange={handleInputChange}
+                                    required
+                                    type="number" 
+                                    className="w-full p-3 bg-white border border-stone-200 focus:border-stone-900 outline-none transition-colors"
+                                    placeholder="0.00"
+                                />
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-6">
+                            <div className="space-y-2">
+                                <label className="text-xs uppercase font-bold tracking-widest text-stone-500">Category</label>
+                                <select 
+                                    name="category"
+                                    value={productForm.category}
+                                    onChange={handleInputChange}
+                                    className="w-full p-3 bg-white border border-stone-200 focus:border-stone-900 outline-none transition-colors appearance-none"
+                                >
+                                    {Object.values(Category).map(cat => (
+                                        <option key={cat} value={cat}>{cat}</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-xs uppercase font-bold tracking-widest text-stone-500">Material</label>
+                                <input 
+                                    name="material"
+                                    value={productForm.material}
+                                    onChange={handleInputChange}
+                                    required
+                                    type="text" 
+                                    className="w-full p-3 bg-white border border-stone-200 focus:border-stone-900 outline-none transition-colors"
+                                    placeholder="e.g. 18k Gold"
+                                />
+                            </div>
+                        </div>
+
+                        {/* Image Management Section */}
+                        <div className="space-y-4 p-4 bg-white border border-stone-200 rounded">
+                             <label className="text-xs uppercase font-bold tracking-widest text-stone-500 block">Product Image</label>
+                             
+                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label className="text-[10px] text-stone-400 uppercase mb-1 block">Option A: Image Link (URL)</label>
+                                    <input 
+                                        name="image"
+                                        value={productForm.image}
+                                        onChange={handleInputChange}
+                                        type="text" 
+                                        className="w-full p-3 bg-stone-50 border border-stone-200 focus:border-stone-900 outline-none transition-colors text-xs"
+                                        placeholder="https://..."
+                                    />
+                                </div>
+                                <div>
+                                    <label className="text-[10px] text-stone-400 uppercase mb-1 block">Option B: Upload File (Local)</label>
+                                    <input 
+                                        type="file" 
+                                        accept="image/*"
+                                        ref={fileInputRef}
+                                        onChange={handleFileUpload}
+                                        className="w-full p-2 bg-stone-50 border border-stone-200 text-xs file:mr-4 file:py-2 file:px-4 file:border-0 file:text-[10px] file:bg-stone-900 file:text-white hover:file:bg-gold-500 file:uppercase file:tracking-widest"
+                                    />
+                                </div>
+                             </div>
+                             
+                             {productForm.image && (
+                                <div className="mt-2">
+                                    <span className="text-[10px] text-stone-400 uppercase">Preview:</span>
+                                    <img src={productForm.image} alt="Preview" className="h-20 w-20 object-cover mt-1 border border-stone-200 rounded" />
+                                </div>
+                             )}
+                        </div>
+
+                        <div className="space-y-2">
+                            <label className="text-xs uppercase font-bold tracking-widest text-stone-500">Description</label>
+                            <textarea 
+                                name="description"
+                                value={productForm.description}
+                                onChange={handleInputChange}
+                                required
+                                rows={3}
+                                className="w-full p-3 bg-white border border-stone-200 focus:border-stone-900 outline-none transition-colors resize-none"
+                                placeholder="Describe the piece..."
+                            />
+                        </div>
+
+                        <div className="flex justify-between items-center pt-2">
+                            {editingId ? (
+                                <button 
+                                    type="button" 
+                                    onClick={resetForm}
+                                    className="text-stone-500 text-xs uppercase hover:text-red-500"
+                                >
+                                    Cancel Edit
+                                </button>
+                            ) : <div></div>}
+
+                            <button 
+                                type="submit"
+                                className="bg-stone-900 text-white px-10 py-4 text-xs uppercase tracking-[0.2em] hover:bg-gold-500 transition-colors"
+                            >
+                                {editingId ? 'Update Item' : 'Publish Item'}
+                            </button>
+                        </div>
+                    </form>
                  </div>
 
-                 <form onSubmit={handleSubmit} className="space-y-6">
-                    <div className="grid grid-cols-2 gap-6">
-                        <div className="space-y-2">
-                            <label className="text-xs uppercase font-bold tracking-widest text-stone-500">Product Name</label>
-                            <input 
-                                name="name"
-                                value={newProduct.name}
-                                onChange={handleInputChange}
-                                required
-                                type="text" 
-                                className="w-full p-4 bg-stone-50 border border-stone-200 focus:border-stone-900 outline-none transition-colors"
-                                placeholder="e.g. Anello Luce"
-                            />
-                        </div>
-                        <div className="space-y-2">
-                             <label className="text-xs uppercase font-bold tracking-widest text-stone-500">Price (€)</label>
-                            <input 
-                                name="price"
-                                value={newProduct.price}
-                                onChange={handleInputChange}
-                                required
-                                type="number" 
-                                className="w-full p-4 bg-stone-50 border border-stone-200 focus:border-stone-900 outline-none transition-colors"
-                                placeholder="0.00"
-                            />
-                        </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-6">
-                        <div className="space-y-2">
-                            <label className="text-xs uppercase font-bold tracking-widest text-stone-500">Category</label>
-                            <select 
-                                name="category"
-                                value={newProduct.category}
-                                onChange={handleInputChange}
-                                className="w-full p-4 bg-stone-50 border border-stone-200 focus:border-stone-900 outline-none transition-colors appearance-none"
-                            >
-                                {Object.values(Category).map(cat => (
-                                    <option key={cat} value={cat}>{cat}</option>
+                 {/* Inventory List */}
+                 <div className="space-y-6">
+                    <h3 className="font-serif text-2xl text-stone-900 border-b border-stone-100 pb-4">Current Inventory ({products.length})</h3>
+                    
+                    <div className="bg-white border border-stone-100 rounded-lg overflow-hidden">
+                        <table className="w-full text-left text-sm text-stone-600">
+                            <thead className="bg-stone-50 text-xs uppercase tracking-widest font-bold text-stone-500">
+                                <tr>
+                                    <th className="p-4">Product</th>
+                                    <th className="p-4">Category</th>
+                                    <th className="p-4">Price</th>
+                                    <th className="p-4 text-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-stone-100">
+                                {products.map(p => (
+                                    <tr key={p.id} className="hover:bg-stone-50/50 transition-colors group">
+                                        <td className="p-4">
+                                            <div className="flex items-center space-x-4">
+                                                <img src={p.image} alt={p.name} className="w-10 h-10 rounded object-cover bg-stone-100" />
+                                                <span className="font-medium text-stone-900">{p.name}</span>
+                                            </div>
+                                        </td>
+                                        <td className="p-4">{p.category}</td>
+                                        <td className="p-4">€{p.price.toFixed(2)}</td>
+                                        <td className="p-4 text-right space-x-3">
+                                            <button 
+                                                onClick={() => startEditing(p)}
+                                                className="text-stone-400 hover:text-gold-500 transition-colors uppercase text-[10px] tracking-widest font-bold"
+                                            >
+                                                Edit
+                                            </button>
+                                            <button 
+                                                onClick={() => onRemoveProduct(p.id)}
+                                                className="text-stone-400 hover:text-red-600 transition-colors uppercase text-[10px] tracking-widest font-bold"
+                                            >
+                                                Delete
+                                            </button>
+                                        </td>
+                                    </tr>
                                 ))}
-                            </select>
-                        </div>
-                         <div className="space-y-2">
-                            <label className="text-xs uppercase font-bold tracking-widest text-stone-500">Material</label>
-                            <input 
-                                name="material"
-                                value={newProduct.material}
-                                onChange={handleInputChange}
-                                required
-                                type="text" 
-                                className="w-full p-4 bg-stone-50 border border-stone-200 focus:border-stone-900 outline-none transition-colors"
-                                placeholder="e.g. 18k Gold"
-                            />
-                        </div>
+                            </tbody>
+                        </table>
+                        {products.length === 0 && (
+                             <div className="p-8 text-center text-stone-400 text-sm">No products found.</div>
+                        )}
                     </div>
-
-                    <div className="space-y-2">
-                        <label className="text-xs uppercase font-bold tracking-widest text-stone-500">Image URL</label>
-                        <input 
-                            name="image"
-                            value={newProduct.image}
-                            onChange={handleInputChange}
-                            required
-                            type="text" 
-                            className="w-full p-4 bg-stone-50 border border-stone-200 focus:border-stone-900 outline-none transition-colors"
-                            placeholder="https://..."
-                        />
-                         <p className="text-[10px] text-stone-400">Paste a direct image link. We've auto-filled a placeholder for you.</p>
-                    </div>
-
-                    <div className="space-y-2">
-                        <label className="text-xs uppercase font-bold tracking-widest text-stone-500">Description</label>
-                        <textarea 
-                            name="description"
-                            value={newProduct.description}
-                            onChange={handleInputChange}
-                            required
-                            rows={4}
-                            className="w-full p-4 bg-stone-50 border border-stone-200 focus:border-stone-900 outline-none transition-colors resize-none"
-                            placeholder="Describe the piece..."
-                        />
-                    </div>
-
-                    <div className="pt-4 flex justify-end">
-                        <button 
-                            type="submit"
-                            className="bg-stone-900 text-white px-10 py-4 text-xs uppercase tracking-[0.2em] hover:bg-gold-500 transition-colors"
-                        >
-                            Publish Item
-                        </button>
-                    </div>
-                 </form>
+                 </div>
             </div>
           )}
         </div>
