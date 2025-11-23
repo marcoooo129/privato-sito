@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Header } from './components/Header';
 import { Hero } from './components/Hero';
 import { ProductGrid } from './components/ProductGrid';
@@ -10,13 +10,29 @@ import { PRODUCTS, FALLBACK_IMAGE } from './constants';
 import { Product, CartItem } from './types';
 
 const App: React.FC = () => {
-  // Initialize products from constants, but keep them in state to allow updates
-  const [products, setProducts] = useState<Product[]>(PRODUCTS);
+  // Initialize products from localStorage if available, otherwise use default constants
+  const [products, setProducts] = useState<Product[]>(() => {
+    try {
+      const savedProducts = localStorage.getItem('luce_ombra_products');
+      if (savedProducts) {
+        return JSON.parse(savedProducts);
+      }
+    } catch (error) {
+      console.warn('Failed to load products from local storage:', error);
+    }
+    return PRODUCTS;
+  });
+
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isAdminOpen, setIsAdminOpen] = useState(false);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+
+  // Persist products to localStorage whenever they change
+  useEffect(() => {
+    localStorage.setItem('luce_ombra_products', JSON.stringify(products));
+  }, [products]);
 
   const addToCart = (product: Product) => {
     setCartItems(prev => {
