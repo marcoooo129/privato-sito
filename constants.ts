@@ -3,87 +3,90 @@ import { Product, Category, SalesData } from './types';
 export const STORE_NAME = "LUCE & OMBRA";
 export const CURRENCY = "€";
 
+// Fallback image in case specific ones fail
+export const FALLBACK_IMAGE = "https://placehold.co/600x800/f5f5f4/292524?text=Luce+%26+Ombra";
+
 export const PRODUCTS: Product[] = [
   {
     id: '1',
-    name: 'Occhiali Cat-Eye Retro',
-    price: 15.00,
-    description: 'Vintage inspired oversized sunglasses with UV400 protection.',
-    image: 'https://images.unsplash.com/photo-1511499767150-a48a237f0083?auto=format&fit=crop&q=80&w=800',
+    name: 'Occhiali "Diva" Tortoise',
+    price: 18.50,
+    description: 'Occhiali da sole oversize con montatura tartarugata. Lenti sfumate UV400.',
+    image: 'https://images.unsplash.com/photo-1572635196237-14b3f281503f?auto=format&fit=crop&q=80&w=800',
     category: Category.SUNGLASSES,
-    material: 'Acetate & Polycarbonate'
+    material: 'Acetate Premium'
   },
   {
     id: '2',
-    name: 'Set Anelli Gold Stack',
-    price: 8.50,
-    description: 'Set of 5 minimalist stacking rings. Perfect for daily wear.',
-    image: 'https://images.unsplash.com/photo-1629224316810-9d8805b95076?auto=format&fit=crop&q=80&w=800',
-    category: Category.RINGS,
-    material: 'Stainless Steel (Acciaio)'
+    name: 'Collana "Amalfi" Gold',
+    price: 14.90,
+    description: 'Collana a catena spessa con finitura oro 18k. Waterproof e anallergica.',
+    image: 'https://images.unsplash.com/photo-1599643477877-5313557d7dce?auto=format&fit=crop&q=80&w=800',
+    category: Category.NECKLACE,
+    material: 'Stainless Steel 18k Gold Plated'
   },
   {
     id: '3',
-    name: 'Foulard Seta Print',
+    name: 'Orecchini "Perla Barocca"',
     price: 12.00,
-    description: 'Elegant square scarf with geometric print. Soft touch.',
-    image: 'https://images.unsplash.com/photo-1584030373081-f37b7bb4faae?auto=format&fit=crop&q=80&w=800',
-    category: Category.SCARVES,
-    material: 'Satin Silk Blend'
+    description: 'Orecchini pendenti con perla naturale irregolare. Eleganza senza tempo.',
+    image: 'https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?auto=format&fit=crop&q=80&w=800',
+    category: Category.EARRINGS,
+    material: 'Freshwater Pearl & Brass'
   },
   {
     id: '4',
-    name: 'Orecchini Cerchio Chunky',
+    name: 'Set Anelli "Roma" Stack',
     price: 9.90,
-    description: 'Bold gold-tone hoop earrings. Lightweight and trendy.',
-    image: 'https://images.unsplash.com/photo-1630019852942-f89202989a51?auto=format&fit=crop&q=80&w=800',
-    category: Category.EARRINGS,
-    material: 'Gold Plated Steel'
-  },
-  {
-    id: '5',
-    name: 'Clip Capelli Perla',
-    price: 5.50,
-    description: 'Oversized hair clip with pearl embellishments.',
-    image: 'https://images.unsplash.com/photo-1576053139778-7e32f2ae3cfd?auto=format&fit=crop&q=80&w=800',
-    category: Category.HAIR,
-    material: 'Resin & Faux Pearl'
-  },
-  {
-    id: '6',
-    name: 'Collana Multistrato',
-    price: 14.00,
-    description: 'Layered necklace with coin pendant. Tarnish resistant.',
-    image: 'https://images.unsplash.com/photo-1599643478518-17488fbbcd75?auto=format&fit=crop&q=80&w=800',
-    category: Category.NECKLACE,
+    description: 'Set di 4 anelli minimalisti da indossare insieme. Design geometrico.',
+    image: 'https://images.unsplash.com/photo-1626784215021-2e39ccf971cd?auto=format&fit=crop&q=80&w=800',
+    category: Category.RINGS,
     material: 'Stainless Steel'
   },
   {
+    id: '5',
+    name: 'Foulard Seta "Como"',
+    price: 24.00,
+    description: 'Foulard quadrato in misto seta con stampa floreale vintage. 70x70cm.',
+    image: 'https://images.unsplash.com/photo-1606760227091-3dd870d97f1d?auto=format&fit=crop&q=80&w=800',
+    category: Category.SCARVES,
+    material: 'Silk Blend'
+  },
+  {
+    id: '6',
+    name: 'Bracciale "Milano" Chain',
+    price: 16.50,
+    description: 'Bracciale a maglia groumette piatta. Un classico dello stile urban.',
+    image: 'https://images.unsplash.com/photo-1573408301185-9146fe634ad0?auto=format&fit=crop&q=80&w=800',
+    category: Category.BRACELETS,
+    material: 'Polished Steel'
+  },
+  {
     id: '7',
-    name: 'Occhiali Aviator Neri',
-    price: 18.00,
-    description: 'Classic black aviator frames. Unisex design.',
-    image: 'https://images.unsplash.com/photo-1572635196237-14b3f281503f?auto=format&fit=crop&q=80&w=800',
-    category: Category.SUNGLASSES,
-    material: 'Metal Frame'
+    name: 'Mollettone "Tartaruga" Chic',
+    price: 6.90,
+    description: 'Accessorio capelli in acetato effetto tartaruga. Presa forte e stile francese.',
+    image: 'https://images.unsplash.com/photo-1617112848923-cc5ac2e61b6f?auto=format&fit=crop&q=80&w=800',
+    category: Category.HAIR,
+    material: 'Cellulose Acetate'
   },
   {
     id: '8',
-    name: 'Sciarpa Cashmere Blend',
-    price: 22.00,
-    description: 'Warm and cozy scarf in neutral beige tones.',
-    image: 'https://images.unsplash.com/photo-1601662546140-d7c3d2e26039?auto=format&fit=crop&q=80&w=800',
-    category: Category.SCARVES,
-    material: 'Viscose & Cashmere'
+    name: 'Orecchini "Sole" Vintage',
+    price: 11.50,
+    description: 'Orecchini a bottone texturizzati oro. Ispirazione anni \'80.',
+    image: 'https://images.unsplash.com/photo-1615655406736-b37c4d898e6f?auto=format&fit=crop&q=80&w=800',
+    category: Category.EARRINGS,
+    material: 'Gold Plated Alloy'
   },
   {
     id: '9',
-    name: 'Bracciale Catena',
-    price: 11.00,
-    description: 'Industrial style chain link bracelet.',
-    image: 'https://images.unsplash.com/photo-1611591437281-460bfbe1220a?auto=format&fit=crop&q=80&w=800',
-    category: Category.BRACELETS,
-    material: 'Polished Steel'
+    name: 'Occhiali "Capri" Blue',
+    price: 19.00,
+    description: 'Occhiali da sole con lenti blu trasparenti e montatura leggera.',
+    image: 'https://images.unsplash.com/photo-1511499767150-a48a237f0083?auto=format&fit=crop&q=80&w=800',
+    category: Category.SUNGLASSES,
+    material: 'Polycarbonate'
   }
 ];
 

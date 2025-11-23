@@ -1,6 +1,6 @@
 import React from 'react';
 import { CartItem } from '../types';
-import { CURRENCY } from '../constants';
+import { CURRENCY, FALLBACK_IMAGE } from '../constants';
 
 interface CartSidebarProps {
   isOpen: boolean;
@@ -12,6 +12,11 @@ interface CartSidebarProps {
 
 export const CartSidebar: React.FC<CartSidebarProps> = ({ isOpen, onClose, items, onRemove, onCheckout }) => {
   const total = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+
+  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+    e.currentTarget.src = FALLBACK_IMAGE;
+    e.currentTarget.onerror = null;
+  };
 
   if (!isOpen) return null;
 
@@ -33,7 +38,12 @@ export const CartSidebar: React.FC<CartSidebarProps> = ({ isOpen, onClose, items
           ) : (
             items.map((item) => (
               <div key={item.id} className="flex gap-4 animate-fade-in-up">
-                <img src={item.image} alt={item.name} className="w-20 h-24 object-cover bg-stone-100" />
+                <img 
+                  src={item.image} 
+                  alt={item.name} 
+                  onError={handleImageError}
+                  className="w-20 h-24 object-cover bg-stone-100" 
+                />
                 <div className="flex-1">
                   <div className="flex justify-between items-start">
                     <h3 className="font-serif text-base text-stone-900">{item.name}</h3>

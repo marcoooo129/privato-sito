@@ -10,6 +10,10 @@ interface AdminDashboardProps {
 }
 
 export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose, onAddProduct }) => {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [credentials, setCredentials] = useState({ username: '', password: '' });
+  const [authError, setAuthError] = useState('');
+
   const [activeTab, setActiveTab] = useState<'overview' | 'inventory'>('overview');
   
   // New Product Form State
@@ -19,10 +23,31 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose,
     category: Category.NECKLACE,
     material: '',
     description: '',
-    image: 'https://picsum.photos/seed/new/800/800' // Default random image
+    image: 'https://placehold.co/800x800/f5f5f4/292524?text=New+Item'
   });
 
   if (!isOpen) return null;
+
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    // Hardcoded credentials for demo purpose
+    if (credentials.username === 'admin' && credentials.password === 'admin123') {
+      setIsAuthenticated(true);
+      setAuthError('');
+    } else {
+      setAuthError('Invalid username or password');
+    }
+  };
+
+  const handleCredentialChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setCredentials({ ...credentials, [e.target.name]: e.target.value });
+    if (authError) setAuthError('');
+  };
+
+  const handleLogout = () => {
+    setIsAuthenticated(false);
+    setCredentials({ username: '', password: '' });
+  };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const value = e.target.name === 'price' ? parseFloat(e.target.value) : e.target.value;
@@ -39,7 +64,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose,
         category: newProduct.category as Category,
         material: newProduct.material || 'Standard',
         description: newProduct.description || '',
-        image: newProduct.image || 'https://picsum.photos/seed/fallback/800/800',
+        image: newProduct.image || 'https://placehold.co/800x800/f5f5f4/292524?text=' + encodeURIComponent(newProduct.name!),
       };
       onAddProduct(productToAdd);
       
@@ -50,15 +75,76 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose,
         category: Category.NECKLACE,
         material: '',
         description: '',
-        image: 'https://picsum.photos/seed/' + Date.now() + '/800/800'
+        image: 'https://placehold.co/800x800/f5f5f4/292524?text=New+Item'
       });
       alert('Product added successfully!');
     }
   };
 
+  // Login Screen
+  if (!isAuthenticated) {
+    return (
+      <div className="fixed inset-0 z-[70] bg-stone-900/50 backdrop-blur-sm flex items-center justify-center p-4">
+        <div className="bg-white w-full max-w-md p-8 rounded-lg shadow-2xl relative animate-fade-in-up">
+          <button onClick={onClose} className="absolute top-4 right-4 text-stone-400 hover:text-stone-900">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+          
+          <div className="text-center mb-8">
+             <div className="inline-block p-3 rounded-full bg-stone-100 mb-4 text-stone-900">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-8 h-8">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+                </svg>
+             </div>
+             <h2 className="font-serif text-2xl text-stone-900">Admin Access</h2>
+             <p className="text-xs text-stone-500 uppercase tracking-widest mt-2">Login to manage inventory</p>
+          </div>
+
+          <form onSubmit={handleLogin} className="space-y-5">
+            <div>
+              <input 
+                type="text" 
+                name="username"
+                value={credentials.username}
+                onChange={handleCredentialChange}
+                placeholder="Username" 
+                className="w-full p-4 bg-stone-50 border border-stone-200 focus:border-stone-900 outline-none transition-colors"
+              />
+            </div>
+            <div>
+              <input 
+                type="password" 
+                name="password"
+                value={credentials.password}
+                onChange={handleCredentialChange}
+                placeholder="Password" 
+                className="w-full p-4 bg-stone-50 border border-stone-200 focus:border-stone-900 outline-none transition-colors"
+              />
+            </div>
+            
+            {authError && (
+              <p className="text-red-500 text-xs text-center font-medium animate-fade-in">{authError}</p>
+            )}
+
+            <button type="submit" className="w-full bg-stone-900 text-white py-4 text-xs uppercase tracking-[0.2em] hover:bg-gold-500 transition-colors">
+              Login
+            </button>
+            
+            <p className="text-[10px] text-center text-stone-400 mt-4">
+              Demo Credentials: admin / admin123
+            </p>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
+  // Dashboard Screen
   return (
     <div className="fixed inset-0 z-[70] bg-stone-900/50 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-white w-full max-w-5xl h-[90vh] overflow-hidden rounded-lg shadow-2xl flex flex-col">
+      <div className="bg-white w-full max-w-5xl h-[90vh] overflow-hidden rounded-lg shadow-2xl flex flex-col animate-fade-in-up">
         {/* Header */}
         <div className="flex justify-between items-center px-8 py-6 border-b border-stone-100 bg-stone-50">
            <div className="flex items-center space-x-8">
@@ -80,11 +166,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose,
                 </button>
             </div>
            </div>
-           <button onClick={onClose} className="p-2 hover:bg-stone-200 rounded-full transition-colors">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-           </button>
+           <div className="flex items-center space-x-4">
+             <button onClick={handleLogout} className="text-xs uppercase tracking-widest text-stone-500 hover:text-red-500">Logout</button>
+             <button onClick={onClose} className="p-2 hover:bg-stone-200 rounded-full transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+             </button>
+           </div>
         </div>
 
         <div className="flex-1 overflow-y-auto bg-white">

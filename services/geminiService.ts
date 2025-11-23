@@ -5,12 +5,12 @@ import { Product } from "../types";
 let chatSession: Chat | null = null;
 
 const getAIClient = () => {
-  // Support for Vite environment variables (VITE_API_KEY) and standard process.env
-  // Vercel injects VITE_ prefixed variables into the client bundle
-  const apiKey = import.meta.env.VITE_API_KEY || process.env.API_KEY;
+  // Use process.env.API_KEY directly as per guidelines.
+  // The API key must be obtained exclusively from the environment variable process.env.API_KEY
+  const apiKey = process.env.API_KEY;
   
   if (!apiKey) {
-    console.error("API Key not found. Please set VITE_API_KEY in your Vercel project settings.");
+    console.error("API Key not found. Please set API_KEY in your environment.");
     return null;
   }
   return new GoogleGenAI({ apiKey });

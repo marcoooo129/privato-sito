@@ -1,4 +1,5 @@
 import React from 'react';
+import { FALLBACK_IMAGE } from '../constants';
 
 export const Hero: React.FC = () => {
   const scrollToCollection = () => {
@@ -8,14 +9,21 @@ export const Hero: React.FC = () => {
     }
   };
 
+  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+    e.currentTarget.src = FALLBACK_IMAGE;
+    e.currentTarget.onerror = null;
+  };
+
   return (
     <div className="relative h-screen w-full overflow-hidden">
       {/* Background Image with Overlay */}
-      {/* Updated image to show a fashion/accessories mood */}
-      <div 
-        className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-transform duration-[10000ms] hover:scale-105"
-        style={{ backgroundImage: 'url("https://images.unsplash.com/photo-1469334031218-e382a71b716b?auto=format&fit=crop&q=80&w=1920")' }} 
-      >
+      <div className="absolute inset-0">
+        <img 
+          src="https://images.unsplash.com/photo-1469334031218-e382a71b716b?auto=format&fit=crop&q=80&w=1920"
+          alt="Fashion Background"
+          className="w-full h-full object-cover transition-transform duration-[10000ms] hover:scale-105"
+          onError={handleImageError}
+        />
         <div className="absolute inset-0 bg-black/30" />
       </div>
 

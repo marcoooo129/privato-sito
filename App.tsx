@@ -6,7 +6,7 @@ import { AIStylist } from './components/AIStylist';
 import { CartSidebar } from './components/CartSidebar';
 import { AdminDashboard } from './components/AdminDashboard';
 import { Checkout } from './components/Checkout';
-import { PRODUCTS } from './constants';
+import { PRODUCTS, FALLBACK_IMAGE } from './constants';
 import { Product, CartItem } from './types';
 
 const App: React.FC = () => {
@@ -49,6 +49,11 @@ const App: React.FC = () => {
     setProducts(prev => [newProduct, ...prev]);
   };
 
+  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+    e.currentTarget.src = FALLBACK_IMAGE;
+    e.currentTarget.onerror = null;
+  };
+
   return (
     <div className="min-h-screen flex flex-col">
       <Header 
@@ -86,6 +91,7 @@ const App: React.FC = () => {
                 src="https://images.unsplash.com/photo-1550614000-4b9519e0233b?auto=format&fit=crop&q=80&w=1200" 
                 alt="Civitanova Commercial District Vibes" 
                 className="w-full h-80 object-cover grayscale opacity-90 rounded-sm"
+                onError={handleImageError}
               />
            </div>
         </section>

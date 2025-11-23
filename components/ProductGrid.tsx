@@ -1,6 +1,6 @@
 import React from 'react';
-import { Product, Category } from '../types';
-import { CURRENCY } from '../constants';
+import { Product } from '../types';
+import { CURRENCY, FALLBACK_IMAGE } from '../constants';
 
 interface ProductGridProps {
   products: Product[];
@@ -8,6 +8,12 @@ interface ProductGridProps {
 }
 
 export const ProductGrid: React.FC<ProductGridProps> = ({ products, onAddToCart }) => {
+  
+  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+    e.currentTarget.src = FALLBACK_IMAGE;
+    e.currentTarget.onerror = null; // Prevent infinite loop
+  };
+
   return (
     <section id="shop" className="py-20 bg-stone-50 scroll-mt-24">
       <div className="container mx-auto px-6">
@@ -24,6 +30,7 @@ export const ProductGrid: React.FC<ProductGridProps> = ({ products, onAddToCart 
                 <img 
                   src={product.image} 
                   alt={product.name}
+                  onError={handleImageError}
                   className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-110 grayscale group-hover:grayscale-0 opacity-90 group-hover:opacity-100"
                 />
                 

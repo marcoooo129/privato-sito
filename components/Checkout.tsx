@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { CartItem } from '../types';
-import { CURRENCY } from '../constants';
+import { CURRENCY, FALLBACK_IMAGE } from '../constants';
 
 interface CheckoutProps {
   isOpen: boolean;
@@ -28,6 +28,11 @@ export const Checkout: React.FC<CheckoutProps> = ({ isOpen, onClose, items, onCo
 
   // Error State
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+    e.currentTarget.src = FALLBACK_IMAGE;
+    e.currentTarget.onerror = null;
+  };
 
   if (!isOpen) return null;
 
@@ -267,7 +272,12 @@ export const Checkout: React.FC<CheckoutProps> = ({ isOpen, onClose, items, onCo
             {items.map((item) => (
               <div key={item.id} className="flex gap-4">
                 <div className="relative">
-                   <img src={item.image} alt={item.name} className="w-16 h-16 object-cover bg-white rounded-sm" />
+                   <img 
+                      src={item.image} 
+                      alt={item.name} 
+                      onError={handleImageError}
+                      className="w-16 h-16 object-cover bg-white rounded-sm" 
+                   />
                    <span className="absolute -top-2 -right-2 bg-stone-900 text-white text-[10px] w-5 h-5 flex items-center justify-center rounded-full">
                      {item.quantity}
                    </span>
