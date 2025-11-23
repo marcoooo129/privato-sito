@@ -4,6 +4,7 @@ import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { SALES_DATA } from '../constants';
 import { Product, Category } from '../types';
 import { uploadImageToCloud } from '../services/imageService';
+import { productService } from '../services/productService';
 
 interface AdminDashboardProps {
   isOpen: boolean;
@@ -26,13 +27,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [credentials, setCredentials] = useState({ username: '', password: '' });
   const [authError, setAuthError] = useState('');
 
-  const [activeTab, setActiveTab] = useState<'overview' | 'inventory'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'inventory' | 'data'>('overview');
   
   // Edit Mode State
   const [editingId, setEditingId] = useState<string | null>(null);
   
   // Upload State
   const [isUploading, setIsUploading] = useState(false);
+
+  // Data Tools State
+  const [importJson, setImportJson] = useState('');
 
   // Form State
   const [productForm, setProductForm] = useState<Partial<Product>>({
@@ -111,8 +115,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const startEditing = (product: Product) => {
     setProductForm(product);
     setEditingId(product.id);
-    const formElement = document.getElementById('product-form-container');
-    if (formElement) formElement.scrollIntoView({ behavior: 'smooth' });
+    setActiveTab('inventory'); // Ensure we are on the inventory/edit tab
+    // Small timeout to allow tab switch render
+    setTimeout(() => {
+         const formElement = document.getElementById('product-form-container');
+         if (formElement) formElement.scrollIntoView({ behavior: 'smooth' });
+    }, 100);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -143,6 +151,39 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     }
     
     resetForm();
+  };
+
+  // Data Tools Handlers
+  const handleResetDatabase = async () => {
+      if (window.confirm("WARNING: This will DELETE ALL products in the database and restore the default catalog. Are you sure?")) {
+          try {
+              await productService.resetToDefaults();
+              alert("Database reset to defaults. Please refresh the page to see changes.");
+              window.location.reload();
+          } catch (e) {
+              alert("Error resetting database.");
+              console.error(e);
+          }
+      }
+  };
+
+  const handleBulkImport = async () => {
+      try {
+          const data = JSON.parse(importJson);
+          if (!Array.isArray(data)) throw new Error("Data must be an array of products");
+          
+          await productService.bulkImport(data);
+          alert("Data imported successfully! Refreshing...");
+          window.location.reload();
+      } catch (e) {
+          alert("Invalid JSON data. Please check format.");
+          console.error(e);
+      }
+  };
+
+  const handleCopyJson = () => {
+      navigator.clipboard.writeText(JSON.stringify(products, null, 2));
+      alert("Current catalog JSON copied to clipboard!");
   };
 
   if (!isAuthenticated) {
@@ -228,6 +269,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 >
                     Inventory
                 </button>
+                 <button 
+                    onClick={() => setActiveTab('data')}
+                    className={`px-4 py-1.5 text-xs font-bold uppercase tracking-wider rounded-sm transition-colors ${activeTab === 'data' ? 'bg-stone-900 text-white' : 'text-stone-500 hover:bg-stone-100'}`}
+                >
+                    Data Tools
+                </button>
             </div>
            </div>
            <div className="flex items-center space-x-4">
@@ -241,7 +288,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         </div>
 
         <div className="flex-1 overflow-y-auto bg-white">
-          {activeTab === 'overview' ? (
+          {activeTab === 'overview' && (
               <div className="p-8 space-y-12">
               {/* Key Metrics */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -282,7 +329,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 </ResponsiveContainer>
               </div>
             </div>
-          ) : (
+          )}
+
+          {activeTab === 'inventory' && (
             <div className="p-8 max-w-4xl mx-auto space-y-12">
                  {/* Product Form */}
                  <div id="product-form-container" className="bg-stone-50 p-8 rounded-lg border border-stone-100">
@@ -384,7 +433,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                 </div>
                                 {/* Option B: Cloud Upload */}
                                 <div>
-                                    <label className="text-[10px] text-stone-400 uppercase mb-1 block">Option B: Cloud Upload (Imgur)</label>
+                                    <label className="text-[10px] text-stone-400 uppercase mb-1 block">Option B: Cloud Upload</label>
                                     <div className="relative">
                                         <input 
                                             type="file" 
@@ -495,6 +544,66 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     </div>
                  </div>
             </div>
+          )}
+
+          {activeTab === 'data' && (
+              <div className="p-8 max-w-4xl mx-auto space-y-12">
+                  <div className="text-center mb-8">
+                      <h3 className="font-serif text-2xl text-stone-900 mb-2">Data Management</h3>
+                      <p className="text-stone-500 text-sm">
+                          Sync, backup, or reset your product catalog.
+                      </p>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                      {/* Import / Export */}
+                      <div className="space-y-6">
+                          <div className="bg-stone-50 p-6 rounded border border-stone-100">
+                              <h4 className="font-serif text-lg text-stone-900 mb-4">Export Data</h4>
+                              <p className="text-xs text-stone-500 mb-4">Copy your entire product catalog as JSON.</p>
+                              <button 
+                                  onClick={handleCopyJson}
+                                  className="w-full bg-white border border-stone-200 text-stone-900 py-3 text-xs uppercase tracking-widest hover:bg-stone-900 hover:text-white transition-colors"
+                              >
+                                  Copy to Clipboard
+                              </button>
+                          </div>
+
+                          <div className="bg-stone-50 p-6 rounded border border-stone-100">
+                              <h4 className="font-serif text-lg text-stone-900 mb-4">Reset Database</h4>
+                              <p className="text-xs text-stone-500 mb-4">
+                                  Wipe all current products and restore the default catalog (High Quality Images).
+                              </p>
+                              <button 
+                                  onClick={handleResetDatabase}
+                                  className="w-full bg-red-50 border border-red-100 text-red-600 py-3 text-xs uppercase tracking-widest hover:bg-red-600 hover:text-white transition-colors"
+                              >
+                                  Reset to Defaults
+                              </button>
+                          </div>
+                      </div>
+
+                      {/* Import Form */}
+                      <div className="bg-stone-50 p-6 rounded border border-stone-100 flex flex-col">
+                          <h4 className="font-serif text-lg text-stone-900 mb-4">Import Data</h4>
+                          <p className="text-xs text-stone-500 mb-4">Paste JSON data here to bulk import products.</p>
+                          <textarea 
+                              className="flex-1 w-full p-3 text-xs font-mono bg-white border border-stone-200 mb-4 focus:border-stone-900 outline-none"
+                              rows={10}
+                              placeholder='[{"name": "...", "price": 10, ...}]'
+                              value={importJson}
+                              onChange={(e) => setImportJson(e.target.value)}
+                          />
+                          <button 
+                              onClick={handleBulkImport}
+                              className="w-full bg-stone-900 text-white py-3 text-xs uppercase tracking-widest hover:bg-gold-500 transition-colors"
+                              disabled={!importJson}
+                          >
+                              Import Products
+                          </button>
+                      </div>
+                  </div>
+              </div>
           )}
         </div>
       </div>

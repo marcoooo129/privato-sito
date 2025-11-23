@@ -38,16 +38,8 @@ export const productService = {
       // Auto-Seed: If DB is connected but empty, upload default products
       if (!data || data.length === 0) {
           console.log("Database connected but empty. Seeding default products to cloud...");
-          const { error: insertError } = await supabase!
-            .from('products')
-            .insert(DEFAULT_PRODUCTS);
-          
-          if (insertError) {
-            console.error("Error seeding database:", insertError);
-          } else {
-            // Return defaults immediately after seeding
-            return DEFAULT_PRODUCTS;
-          }
+          await productService.resetToDefaults();
+          return DEFAULT_PRODUCTS;
       }
       
       return data as Product[];
@@ -106,5 +98,40 @@ export const productService = {
       const updated = current.map(p => p.id === product.id ? product : p);
       saveLocalProducts(updated);
     }
+  },
+
+  // RESET TO DEFAULTS (Wipe DB and Seed)
+  resetToDefaults: async (): Promise<void> => {
+    if (isSupabaseConfigured()) {
+        // 1. Delete all rows
+        const { error: deleteError } = await supabase!
+            .from('products')
+            .delete()
+            .neq('id', '0'); // Delete all where id is not '0' (effectively all)
+        
+        if (deleteError) throw deleteError;
+
+        // 2. Insert defaults
+        const { error: insertError } = await supabase!
+            .from('products')
+            .insert(DEFAULT_PRODUCTS);
+        
+        if (insertError) throw insertError;
+    } else {
+        saveLocalProducts(DEFAULT_PRODUCTS);
+    }
+  },
+
+  // BULK IMPORT
+  bulkImport: async (products: Product[]): Promise<void> => {
+      if (isSupabaseConfigured()) {
+        const { error } = await supabase!
+            .from('products')
+            .upsert(products);
+        
+        if (error) throw error;
+      } else {
+          saveLocalProducts(products);
+      }
   }
 };

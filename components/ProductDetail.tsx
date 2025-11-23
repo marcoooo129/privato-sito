@@ -1,15 +1,24 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Product } from '../types';
 import { CURRENCY, FALLBACK_IMAGE } from '../constants';
 
 interface ProductDetailProps {
   product: Product | null;
   onClose: () => void;
-  onAddToCart: (product: Product) => void;
+  onAddToCart: (product: Product, quantity: number) => void;
 }
 
 export const ProductDetail: React.FC<ProductDetailProps> = ({ product, onClose, onAddToCart }) => {
+  const [quantity, setQuantity] = useState(1);
+  const [isAdded, setIsAdded] = useState(false);
+
+  // Reset quantity when product changes
+  useEffect(() => {
+    setQuantity(1);
+    setIsAdded(false);
+  }, [product]);
+
   if (!product) return null;
 
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
@@ -17,9 +26,16 @@ export const ProductDetail: React.FC<ProductDetailProps> = ({ product, onClose, 
     e.currentTarget.onerror = null;
   };
 
+  const handleIncrement = () => setQuantity(q => q + 1);
+  const handleDecrement = () => setQuantity(q => q > 1 ? q - 1 : 1);
+
   const handleAddToCart = () => {
-    onAddToCart(product);
-    // Optional: Close modal on add, or keep open. Keeping open is more "Amazon-like"
+    onAddToCart(product, quantity);
+    setIsAdded(true);
+    // Reset feedback after 1.5 seconds
+    setTimeout(() => {
+        setIsAdded(false);
+    }, 1500);
   };
 
   return (
@@ -94,15 +110,51 @@ export const ProductDetail: React.FC<ProductDetailProps> = ({ product, onClose, 
             </div>
           </div>
 
-          <div className="mt-auto pt-6">
+          <div className="mt-auto pt-6 space-y-4">
+            
+            {/* Quantity Selector */}
+            <div className="flex items-center space-x-4">
+                 <span className="text-xs uppercase font-bold tracking-widest text-stone-500">Quantity</span>
+                 <div className="flex items-center border border-stone-200 rounded-sm">
+                    <button 
+                        onClick={handleDecrement}
+                        className="px-4 py-2 hover:bg-stone-50 text-stone-600 transition-colors"
+                    >
+                        -
+                    </button>
+                    <span className="w-8 text-center text-sm font-medium">{quantity}</span>
+                    <button 
+                         onClick={handleIncrement}
+                         className="px-4 py-2 hover:bg-stone-50 text-stone-600 transition-colors"
+                    >
+                        +
+                    </button>
+                 </div>
+            </div>
+
             <button 
               onClick={handleAddToCart}
-              className="w-full bg-stone-900 text-white py-4 text-sm uppercase tracking-[0.2em] hover:bg-gold-500 transition-colors flex items-center justify-center space-x-2"
+              className={`w-full py-4 text-sm uppercase tracking-[0.2em] transition-all duration-300 flex items-center justify-center space-x-2 ${
+                  isAdded 
+                  ? 'bg-gold-500 text-white' 
+                  : 'bg-stone-900 text-white hover:bg-stone-800'
+              }`}
             >
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 5.659c.992 4.425.542 6.245-1.631 6.245h-13.4c-2.174 0-2.623-1.82-1.631-6.245l1.263-5.659c.578-2.59 1.98-3.664 3.596-3.664h6.917c1.616 0 3.018 1.075 3.596 3.664z" />
-              </svg>
-              <span>Add to Cart</span>
+              {isAdded ? (
+                  <>
+                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                     </svg>
+                     <span>Added to Bag</span>
+                  </>
+              ) : (
+                  <>
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 5.659c.992 4.425.542 6.245-1.631 6.245h-13.4c-2.174 0-2.623-1.82-1.631-6.245l1.263-5.659c.578-2.59 1.98-3.664 3.596-3.664h6.917c1.616 0 3.018 1.075 3.596 3.664z" />
+                    </svg>
+                    <span>Add to Cart - {CURRENCY}{(product.price * quantity).toFixed(2)}</span>
+                  </>
+              )}
             </button>
             <p className="text-center text-[10px] text-stone-400 mt-3 uppercase tracking-wider">
               Free shipping on all orders over {CURRENCY}50
