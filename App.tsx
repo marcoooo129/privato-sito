@@ -67,15 +67,25 @@ const App: React.FC = () => {
         <section id="about" className="py-24 bg-white text-center scroll-mt-24">
            <div className="container mx-auto px-6 max-w-2xl">
               <h2 className="text-3xl font-serif mb-8 text-stone-900">La Nostra Storia</h2>
-              <p className="text-stone-600 leading-relaxed font-light mb-8">
-                Luce & Ombra was born in the historic streets of Florence. We believe that true luxury lies in simplicity. 
-                Our designs balance the light (Luce) of polished metals with the shadow (Ombra) of negative space, 
-                creating pieces that are not just worn, but experienced.
-              </p>
+              <div className="space-y-6 text-stone-600 leading-relaxed font-light mb-8">
+                <p>
+                  Nel cuore vibrante del distretto commerciale di <strong>Civitanova Marche</strong>, 
+                  Luce & Ombra rappresenta il punto di incontro tra la moda internazionale e lo stile italiano.
+                </p>
+                <p>
+                  Nati come punto di riferimento per l'ingrosso (wholesale) e il dettaglio nel centro commerciale, 
+                  selezioniamo con cura piccoli accessori di tendenza: dagli occhiali da sole statement 
+                  alla bigiotteria in acciaio inossidabile, fino agli accessori per capelli più ricercati.
+                </p>
+                <p>
+                  La nostra missione è offrire design ricercato e qualità accessibile, portando le ultime novità 
+                  globali direttamente nel cuore delle Marche.
+                </p>
+              </div>
               <img 
-                src="https://picsum.photos/id/447/800/400" 
-                alt="Atelier" 
-                className="w-full h-64 object-cover grayscale opacity-80"
+                src="https://images.unsplash.com/photo-1550614000-4b9519e0233b?auto=format&fit=crop&q=80&w=1200" 
+                alt="Civitanova Commercial District Vibes" 
+                className="w-full h-80 object-cover grayscale opacity-90 rounded-sm"
               />
            </div>
         </section>
@@ -83,11 +93,11 @@ const App: React.FC = () => {
 
       <footer className="bg-stone-900 text-stone-400 py-12 border-t border-stone-800">
         <div className="container mx-auto px-6 flex flex-col md:flex-row justify-between items-center text-xs tracking-widest uppercase">
-          <p>&copy; 2024 Luce & Ombra. Milano - Firenze - Roma.</p>
+          <p>&copy; 2024 Luce & Ombra. Civitanova Marche (MC).</p>
           <div className="flex space-x-6 mt-4 md:mt-0">
              <a href="#" className="hover:text-white">Instagram</a>
-             <a href="#" className="hover:text-white">Pinterest</a>
-             <a href="#" className="hover:text-white">Legal</a>
+             <a href="#" className="hover:text-white">WeChat</a>
+             <a href="#" className="hover:text-white">Wholesale Info</a>
           </div>
         </div>
       </footer>

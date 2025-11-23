@@ -1,8 +1,11 @@
 export enum Category {
-  NECKLACE = 'Necklace',
-  RINGS = 'Rings',
-  EARRINGS = 'Earrings',
-  BRACELETS = 'Bracelets'
+  NECKLACE = 'Collane',
+  RINGS = 'Anelli',
+  EARRINGS = 'Orecchini',
+  BRACELETS = 'Bracciali',
+  SUNGLASSES = 'Occhiali da Sole',
+  SCARVES = 'Sciarpe & Foulard',
+  HAIR = 'Accessori Capelli'
 }
 
 export interface Product {

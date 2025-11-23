@@ -11,20 +11,21 @@ export const Hero: React.FC = () => {
   return (
     <div className="relative h-screen w-full overflow-hidden">
       {/* Background Image with Overlay */}
+      {/* Updated image to show a fashion/accessories mood */}
       <div 
         className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-transform duration-[10000ms] hover:scale-105"
-        style={{ backgroundImage: 'url("https://picsum.photos/id/1059/1920/1080")' }} 
+        style={{ backgroundImage: 'url("https://images.unsplash.com/photo-1469334031218-e382a71b716b?auto=format&fit=crop&q=80&w=1920")' }} 
       >
-        <div className="absolute inset-0 bg-black/20" />
+        <div className="absolute inset-0 bg-black/30" />
       </div>
 
       {/* Content */}
       <div className="relative h-full flex flex-col items-center justify-center text-center text-white px-6">
         <span className="text-sm md:text-base tracking-[0.3em] uppercase mb-4 opacity-90 animate-fade-in-up">
-          Fatto in Italia
+          Civitanova Marche Fashion Hub
         </span>
         <h1 className="text-5xl md:text-7xl lg:text-8xl font-serif font-medium mb-8 tracking-wide animate-fade-in-up delay-100">
-          Eleganza <br/> <span className="italic font-light">Senza Tempo</span>
+          Stile Urbano <br/> <span className="italic font-light">Dettagli Unici</span>
         </h1>
         <button 
           onClick={scrollToCollection}
