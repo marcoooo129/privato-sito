@@ -8,22 +8,14 @@ import { CartSidebar } from './components/CartSidebar';
 import { AdminDashboard } from './components/AdminDashboard';
 import { Checkout } from './components/Checkout';
 import { ProductDetail } from './components/ProductDetail';
-import { PRODUCTS, FALLBACK_IMAGE } from './constants';
+import { FALLBACK_IMAGE } from './constants';
 import { Product, CartItem } from './types';
+import { productService } from './services/productService';
 
 const App: React.FC = () => {
-  // Initialize products from localStorage if available, otherwise use default constants
-  const [products, setProducts] = useState<Product[]>(() => {
-    try {
-      const savedProducts = localStorage.getItem('luce_ombra_products');
-      if (savedProducts) {
-        return JSON.parse(savedProducts);
-      }
-    } catch (error) {
-      console.warn('Failed to load products from local storage:', error);
-    }
-    return PRODUCTS;
-  });
+  // Initialize with empty array, will load async
+  const [products, setProducts] = useState<Product[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
@@ -34,10 +26,21 @@ const App: React.FC = () => {
   // State for selected product (Detail Modal)
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
-  // Persist products to localStorage whenever they change
+  // Load products on mount
   useEffect(() => {
-    localStorage.setItem('luce_ombra_products', JSON.stringify(products));
-  }, [products]);
+    const loadData = async () => {
+      setIsLoading(true);
+      try {
+        const data = await productService.getAll();
+        setProducts(data);
+      } catch (error) {
+        console.error("Failed to load products", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    loadData();
+  }, []);
 
   const addToCart = (product: Product) => {
     setCartItems(prev => {
@@ -66,18 +69,41 @@ const App: React.FC = () => {
     setIsCheckoutOpen(false);
   };
 
-  const handleAddProduct = (newProduct: Product) => {
-    setProducts(prev => [newProduct, ...prev]);
-  };
-
-  const handleRemoveProduct = (id: string) => {
-    if (window.confirm('Are you sure you want to delete this product?')) {
-      setProducts(prev => prev.filter(p => p.id !== id));
+  // Async handlers for Admin actions
+  const handleAddProduct = async (newProduct: Product) => {
+    try {
+      await productService.add(newProduct);
+      // Refresh list
+      const updatedList = await productService.getAll();
+      setProducts(updatedList);
+    } catch (error) {
+      alert("Error adding product");
+      console.error(error);
     }
   };
 
-  const handleUpdateProduct = (updatedProduct: Product) => {
-    setProducts(prev => prev.map(p => p.id === updatedProduct.id ? updatedProduct : p));
+  const handleRemoveProduct = async (id: string) => {
+    if (window.confirm('Are you sure you want to delete this product?')) {
+      try {
+        await productService.remove(id);
+        // Optimistic update or refresh
+        setProducts(prev => prev.filter(p => p.id !== id));
+      } catch (error) {
+        alert("Error deleting product");
+        console.error(error);
+      }
+    }
+  };
+
+  const handleUpdateProduct = async (updatedProduct: Product) => {
+    try {
+      await productService.update(updatedProduct);
+      // Refresh list or optimistic update
+      setProducts(prev => prev.map(p => p.id === updatedProduct.id ? updatedProduct : p));
+    } catch (error) {
+      alert("Error updating product");
+      console.error(error);
+    }
   };
 
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
@@ -96,12 +122,18 @@ const App: React.FC = () => {
 
       <main className="flex-grow">
         <Hero />
-        {/* Pass the dynamic products state and the click handler */}
-        <ProductGrid 
-          products={products} 
-          onAddToCart={addToCart} 
-          onProductClick={setSelectedProduct}
-        />
+        
+        {isLoading ? (
+          <div className="py-20 flex justify-center">
+             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gold-500"></div>
+          </div>
+        ) : (
+          <ProductGrid 
+            products={products} 
+            onAddToCart={addToCart} 
+            onProductClick={setSelectedProduct}
+          />
+        )}
         
         {/* Brand Story Section */}
         <section id="about" className="py-24 bg-white text-center scroll-mt-24">
@@ -165,7 +197,6 @@ const App: React.FC = () => {
         onAddToCart={addToCart}
       />
 
-      {/* Pass dynamic products to AI Stylist so it knows about new items */}
       <AIStylist 
         isOpen={isChatOpen} 
         onClose={() => setIsChatOpen(false)} 

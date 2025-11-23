@@ -1,13 +1,14 @@
 
 import React, { useState, useRef } from 'react';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Legend } from 'recharts';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { SALES_DATA } from '../constants';
 import { Product, Category } from '../types';
+import { uploadImageToCloud } from '../services/imageService';
 
 interface AdminDashboardProps {
   isOpen: boolean;
   onClose: () => void;
-  products: Product[]; // Pass all products to display list
+  products: Product[];
   onAddProduct: (product: Product) => void;
   onRemoveProduct: (id: string) => void;
   onUpdateProduct: (product: Product) => void;
@@ -29,6 +30,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   
   // Edit Mode State
   const [editingId, setEditingId] = useState<string | null>(null);
+  
+  // Upload State
+  const [isUploading, setIsUploading] = useState(false);
 
   // Form State
   const [productForm, setProductForm] = useState<Partial<Product>>({
@@ -47,16 +51,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Normalize inputs: trim whitespace and lowercase username
     const usernameInput = credentials.username.trim().toLowerCase();
     const passwordInput = credentials.password.trim();
 
-    // Hardcoded credentials for demo purpose
     if (usernameInput === 'admin' && passwordInput === 'admin123') {
       setIsAuthenticated(true);
       setAuthError('');
     } else {
-      setAuthError('Login Failed. Please use: admin / admin123');
+      setAuthError('Login Failed. Correct: admin / admin123');
     }
   };
 
@@ -75,15 +77,20 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     setProductForm({ ...productForm, [e.target.name]: value });
   };
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        // Set the base64 string as the image
-        setProductForm(prev => ({ ...prev, image: reader.result as string }));
-      };
-      reader.readAsDataURL(file);
+      setIsUploading(true);
+      try {
+        // Upload to Cloud (Imgur) instead of local Base64
+        const cloudUrl = await uploadImageToCloud(file);
+        setProductForm(prev => ({ ...prev, image: cloudUrl }));
+      } catch (error) {
+        alert("Failed to upload image to cloud. Please try again or use a direct link.");
+        console.error(error);
+      } finally {
+        setIsUploading(false);
+      }
     }
   };
 
@@ -98,12 +105,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     });
     setEditingId(null);
     if (fileInputRef.current) fileInputRef.current.value = '';
+    setIsUploading(false);
   };
 
   const startEditing = (product: Product) => {
     setProductForm(product);
     setEditingId(product.id);
-    // Scroll to form top
     const formElement = document.getElementById('product-form-container');
     if (formElement) formElement.scrollIntoView({ behavior: 'smooth' });
   };
@@ -111,11 +118,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Default placeholder if image is empty
     const finalImage = productForm.image || 'https://placehold.co/800x800/f5f5f4/292524?text=' + encodeURIComponent(productForm.name || 'Item');
 
     if (editingId) {
-      // Update Mode
       const updatedProduct: Product = {
         ...(productForm as Product),
         id: editingId,
@@ -124,7 +129,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       onUpdateProduct(updatedProduct);
       alert('Product updated successfully!');
     } else {
-      // Add Mode
       const productToAdd: Product = {
         id: Date.now().toString(),
         name: productForm.name!,
@@ -141,7 +145,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     resetForm();
   };
 
-  // Login Screen
   if (!isAuthenticated) {
     return (
       <div className="fixed inset-0 z-[70] bg-stone-900/50 backdrop-blur-sm flex items-center justify-center p-4">
@@ -203,7 +206,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     );
   }
 
-  // Dashboard Screen
   return (
     <div className="fixed inset-0 z-[70] bg-stone-900/50 backdrop-blur-sm flex items-center justify-center p-4">
       <div className="bg-white w-full max-w-6xl h-[90vh] overflow-hidden rounded-lg shadow-2xl flex flex-col animate-fade-in-up">
@@ -257,7 +259,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 </div>
               </div>
     
-              {/* Charts Row 1 */}
+              {/* Charts */}
               <div className="h-96 w-full">
                 <h3 className="font-serif text-xl mb-6 text-stone-800">Monthly Revenue</h3>
                 <ResponsiveContainer width="100%" height="100%">
@@ -289,11 +291,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                            {editingId ? 'Edit Product' : 'Add New Arrival'}
                         </h3>
                         <p className="text-stone-500 text-sm">
-                           {editingId ? 'Modify existing item details.' : 'Add a new item to the collection.'}
+                           Manage your digital catalog.
                         </p>
                     </div>
 
                     <form onSubmit={handleSubmit} className="space-y-6">
+                        {/* Name & Price */}
                         <div className="grid grid-cols-2 gap-6">
                             <div className="space-y-2">
                                 <label className="text-xs uppercase font-bold tracking-widest text-stone-500">Product Name</label>
@@ -321,6 +324,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                             </div>
                         </div>
 
+                        {/* Category & Material */}
                         <div className="grid grid-cols-2 gap-6">
                             <div className="space-y-2">
                                 <label className="text-xs uppercase font-bold tracking-widest text-stone-500">Category</label>
@@ -350,10 +354,23 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         </div>
 
                         {/* Image Management Section */}
-                        <div className="space-y-4 p-4 bg-white border border-stone-200 rounded">
+                        <div className="space-y-4 p-5 bg-white border border-stone-200 rounded relative">
+                             {isUploading && (
+                                <div className="absolute inset-0 bg-white/80 z-10 flex items-center justify-center">
+                                    <div className="text-center">
+                                        <svg className="animate-spin h-8 w-8 text-gold-500 mx-auto mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                        </svg>
+                                        <p className="text-xs font-bold text-stone-900 uppercase tracking-widest">Uploading to Cloud...</p>
+                                    </div>
+                                </div>
+                             )}
+
                              <label className="text-xs uppercase font-bold tracking-widest text-stone-500 block">Product Image</label>
                              
                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {/* Option A: Link */}
                                 <div>
                                     <label className="text-[10px] text-stone-400 uppercase mb-1 block">Option A: Image Link (URL)</label>
                                     <input 
@@ -365,22 +382,31 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                         placeholder="https://..."
                                     />
                                 </div>
+                                {/* Option B: Cloud Upload */}
                                 <div>
-                                    <label className="text-[10px] text-stone-400 uppercase mb-1 block">Option B: Upload File (Local)</label>
-                                    <input 
-                                        type="file" 
-                                        accept="image/*"
-                                        ref={fileInputRef}
-                                        onChange={handleFileUpload}
-                                        className="w-full p-2 bg-stone-50 border border-stone-200 text-xs file:mr-4 file:py-2 file:px-4 file:border-0 file:text-[10px] file:bg-stone-900 file:text-white hover:file:bg-gold-500 file:uppercase file:tracking-widest"
-                                    />
+                                    <label className="text-[10px] text-stone-400 uppercase mb-1 block">Option B: Cloud Upload (Imgur)</label>
+                                    <div className="relative">
+                                        <input 
+                                            type="file" 
+                                            accept="image/*"
+                                            ref={fileInputRef}
+                                            onChange={handleFileUpload}
+                                            className="w-full p-2 bg-stone-50 border border-stone-200 text-xs file:mr-4 file:py-2 file:px-4 file:border-0 file:text-[10px] file:bg-stone-900 file:text-white hover:file:bg-gold-500 file:uppercase file:tracking-widest cursor-pointer"
+                                        />
+                                    </div>
+                                    <p className="text-[10px] text-stone-400 mt-1">
+                                        *Automatically uploads to cloud and generates a public URL.
+                                    </p>
                                 </div>
                              </div>
                              
                              {productForm.image && (
-                                <div className="mt-2">
-                                    <span className="text-[10px] text-stone-400 uppercase">Preview:</span>
-                                    <img src={productForm.image} alt="Preview" className="h-20 w-20 object-cover mt-1 border border-stone-200 rounded" />
+                                <div className="mt-4 flex items-center space-x-4 bg-stone-50 p-2 rounded border border-stone-100">
+                                    <img src={productForm.image} alt="Preview" className="h-16 w-16 object-cover rounded border border-stone-200" />
+                                    <div className="flex-1 overflow-hidden">
+                                        <p className="text-[10px] text-stone-400 uppercase">Active URL</p>
+                                        <p className="text-xs text-stone-600 truncate font-mono">{productForm.image}</p>
+                                    </div>
                                 </div>
                              )}
                         </div>
@@ -411,7 +437,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
                             <button 
                                 type="submit"
-                                className="bg-stone-900 text-white px-10 py-4 text-xs uppercase tracking-[0.2em] hover:bg-gold-500 transition-colors"
+                                disabled={isUploading}
+                                className={`bg-stone-900 text-white px-10 py-4 text-xs uppercase tracking-[0.2em] transition-colors ${isUploading ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gold-500'}`}
                             >
                                 {editingId ? 'Update Item' : 'Publish Item'}
                             </button>
