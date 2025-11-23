@@ -59,8 +59,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   useEffect(() => {
     if (activeTab === 'orders' && isAuthenticated) {
         const fetchOrders = async () => {
-            const data = await orderService.getAllOrders();
-            setOrders(data);
+            try {
+                const data = await orderService.getAllOrders();
+                setOrders(data || []);
+            } catch (error) {
+                console.error("Failed to fetch orders", error);
+                setOrders([]);
+            }
         };
         fetchOrders();
     }
@@ -74,7 +79,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     const usernameInput = credentials.username.trim().toLowerCase();
     const passwordInput = credentials.password.trim();
 
-    if (usernameInput === 'marcosu' && passwordInput === 'jiayou123') {
+    // Use environment variables for credentials if available, otherwise fallback to defaults
+    // This prevents exposing specific passwords in the source code
+    const adminUser = process.env.ADMIN_USER || 'admin';
+    const adminPass = process.env.ADMIN_PASSWORD || 'password';
+
+    if (usernameInput === adminUser && passwordInput === adminPass) {
       setIsAuthenticated(true);
       setAuthError('');
     } else {
@@ -390,15 +400,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                       {/* Customer Info */}
                                       <div className="space-y-1 min-w-[200px]">
                                           <div className="flex items-center space-x-3 mb-2">
-                                              <h4 className="font-bold text-stone-900">{order.customer.name}</h4>
+                                              <h4 className="font-bold text-stone-900">{order.customer?.name || 'Unknown Customer'}</h4>
                                               <span className={`px-2 py-0.5 text-[10px] uppercase rounded-full font-bold ${order.status === 'completed' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
                                                   {order.status}
                                               </span>
                                           </div>
-                                          <p className="text-sm text-stone-600">📞 {order.customer.phone}</p>
-                                          {order.customer.email && <p className="text-sm text-stone-600">✉️ {order.customer.email}</p>}
+                                          <p className="text-sm text-stone-600">📞 {order.customer?.phone || 'N/A'}</p>
+                                          {order.customer?.email && <p className="text-sm text-stone-600">✉️ {order.customer.email}</p>}
                                           <p className="text-xs text-stone-400 mt-2">Date: {new Date(order.created_at).toLocaleDateString()}</p>
-                                          {order.customer.message && (
+                                          {order.customer?.message && (
                                               <div className="mt-3 p-3 bg-stone-50 rounded text-xs text-stone-600 italic">
                                                   "{order.customer.message}"
                                               </div>
@@ -408,7 +418,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                       {/* Items */}
                                       <div className="flex-1 bg-stone-50 p-4 rounded-lg">
                                           <ul className="space-y-2 mb-3">
-                                              {order.items.map((item, idx) => (
+                                              {order.items?.map((item, idx) => (
                                                   <li key={idx} className="flex justify-between text-sm text-stone-700 border-b border-stone-200/50 pb-1 last:border-0">
                                                       <span>{item.name} <span className="text-stone-400 font-mono">x{item.quantity}</span></span>
                                                       <span>€{(item.price * item.quantity).toFixed(2)}</span>
@@ -417,7 +427,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                           </ul>
                                           <div className="flex justify-between text-base font-bold text-stone-900 border-t border-stone-200 pt-2">
                                               <span>Total Estimate</span>
-                                              <span>€{order.total.toFixed(2)}</span>
+                                              <span>€{order.total?.toFixed(2) || '0.00'}</span>
                                           </div>
                                       </div>
 
@@ -430,7 +440,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                               {order.status === 'completed' ? 'Mark Pending' : 'Mark Done'}
                                           </button>
                                           <a 
-                                            href={`tel:${order.customer.phone}`}
+                                            href={`tel:${order.customer?.phone}`}
                                             className="px-4 py-2 text-xs uppercase font-bold rounded border border-stone-300 text-stone-700 hover:bg-stone-100 text-center"
                                           >
                                               Call
