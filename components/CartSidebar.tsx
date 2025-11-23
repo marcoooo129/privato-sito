@@ -68,7 +68,7 @@ export const CartSidebar: React.FC<CartSidebarProps> = ({ isOpen, onClose, items
               onClick={onCheckout}
               className="w-full bg-stone-900 text-white py-4 text-xs uppercase tracking-[0.2em] hover:bg-gold-500 transition-colors"
             >
-              Checkout
+              Invia Richiesta Ordine
             </button>
           </div>
         )}

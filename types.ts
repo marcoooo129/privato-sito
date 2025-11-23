@@ -22,6 +22,22 @@ export interface CartItem extends Product {
   quantity: number;
 }
 
+export interface CustomerInfo {
+  name: string;
+  email: string;
+  phone: string;
+  message?: string;
+}
+
+export interface Order {
+  id: string;
+  customer: CustomerInfo;
+  items: CartItem[];
+  total: number;
+  status: 'pending' | 'completed' | 'contacted';
+  created_at: string;
+}
+
 export interface ChatMessage {
   id: string;
   role: 'user' | 'model';

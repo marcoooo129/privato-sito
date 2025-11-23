@@ -1,10 +1,11 @@
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { SALES_DATA } from '../constants';
-import { Product, Category } from '../types';
+import { Product, Category, Order } from '../types';
 import { uploadImageToCloud } from '../services/imageService';
 import { productService } from '../services/productService';
+import { orderService } from '../services/orderService';
 
 interface AdminDashboardProps {
   isOpen: boolean;
@@ -27,8 +28,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [credentials, setCredentials] = useState({ username: '', password: '' });
   const [authError, setAuthError] = useState('');
 
-  const [activeTab, setActiveTab] = useState<'overview' | 'inventory' | 'data'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'orders' | 'inventory' | 'data'>('overview');
   
+  // Orders State
+  const [orders, setOrders] = useState<Order[]>([]);
+
   // Edit Mode State
   const [editingId, setEditingId] = useState<string | null>(null);
   
@@ -40,6 +44,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
   // Form State
   const [productForm, setProductForm] = useState<Partial<Product>>({
+    id: '',
     name: '',
     price: 0,
     category: Category.NECKLACE,
@@ -50,6 +55,17 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Load Orders when tab changes to 'orders'
+  useEffect(() => {
+    if (activeTab === 'orders' && isAuthenticated) {
+        const fetchOrders = async () => {
+            const data = await orderService.getAllOrders();
+            setOrders(data);
+        };
+        fetchOrders();
+    }
+  }, [activeTab, isAuthenticated]);
+
   if (!isOpen) return null;
 
   const handleLogin = (e: React.FormEvent) => {
@@ -58,11 +74,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     const usernameInput = credentials.username.trim().toLowerCase();
     const passwordInput = credentials.password.trim();
 
-    if (usernameInput === 'admin' && passwordInput === 'admin123') {
+    if (usernameInput === 'marcosu' && passwordInput === 'jiayou123') {
       setIsAuthenticated(true);
       setAuthError('');
     } else {
-      setAuthError('Login Failed. Correct: admin / admin123');
+      setAuthError('Login Failed. Incorrect credentials.');
     }
   };
 
@@ -100,6 +116,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
   const resetForm = () => {
     setProductForm({
+      id: '',
       name: '',
       price: 0,
       category: Category.NECKLACE,
@@ -131,14 +148,29 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     if (editingId) {
       const updatedProduct: Product = {
         ...(productForm as Product),
-        id: editingId,
+        id: editingId, // Keep ID consistent on update
         image: finalImage
       };
       onUpdateProduct(updatedProduct);
       alert('Product updated successfully!');
     } else {
+      // Manual ID Handling
+      let finalId = productForm.id?.trim();
+      
+      // If manual ID is provided, check for duplicates
+      if (finalId) {
+          const exists = products.some(p => p.id === finalId);
+          if (exists) {
+              alert(`Error: Item ID "${finalId}" already exists. Please use a different ID.`);
+              return;
+          }
+      } else {
+          // Fallback to auto-gen if empty
+          finalId = Date.now().toString();
+      }
+
       const productToAdd: Product = {
-        id: Date.now().toString(),
+        id: finalId,
         name: productForm.name!,
         price: productForm.price!,
         category: productForm.category as Category,
@@ -184,6 +216,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const handleCopyJson = () => {
       navigator.clipboard.writeText(JSON.stringify(products, null, 2));
       alert("Current catalog JSON copied to clipboard!");
+  };
+
+  const toggleOrderStatus = async (order: Order) => {
+      const newStatus = order.status === 'completed' ? 'pending' : 'completed';
+      await orderService.updateStatus(order.id, newStatus);
+      setOrders(prev => prev.map(o => o.id === order.id ? { ...o, status: newStatus } : o));
   };
 
   if (!isAuthenticated) {
@@ -235,12 +273,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             <button type="submit" className="w-full bg-stone-900 text-white py-4 text-xs uppercase tracking-[0.2em] hover:bg-gold-500 transition-colors">
               Login
             </button>
-            
-            <div className="text-center mt-4 p-2 bg-stone-50 rounded border border-stone-100">
-               <p className="text-[10px] text-stone-400 uppercase tracking-wider mb-1">Demo Credentials</p>
-               <p className="text-xs font-mono text-stone-600">user: admin</p>
-               <p className="text-xs font-mono text-stone-600">pass: admin123</p>
-            </div>
           </form>
         </div>
       </div>
@@ -262,6 +294,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     className={`px-4 py-1.5 text-xs font-bold uppercase tracking-wider rounded-sm transition-colors ${activeTab === 'overview' ? 'bg-stone-900 text-white' : 'text-stone-500 hover:bg-stone-100'}`}
                 >
                     Overview
+                </button>
+                <button 
+                    onClick={() => setActiveTab('orders')}
+                    className={`px-4 py-1.5 text-xs font-bold uppercase tracking-wider rounded-sm transition-colors ${activeTab === 'orders' ? 'bg-stone-900 text-white' : 'text-stone-500 hover:bg-stone-100'}`}
+                >
+                    Orders
                 </button>
                 <button 
                     onClick={() => setActiveTab('inventory')}
@@ -330,6 +368,81 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               </div>
             </div>
           )}
+          
+          {activeTab === 'orders' && (
+              <div className="p-8 space-y-8">
+                  <div className="text-center mb-8">
+                      <h3 className="font-serif text-2xl text-stone-900 mb-2">Order Requests</h3>
+                      <p className="text-stone-500 text-sm">
+                          Review product lists submitted by customers.
+                      </p>
+                  </div>
+                  
+                  {orders.length === 0 ? (
+                      <div className="text-center py-12 bg-stone-50 border border-stone-100 rounded">
+                          <p className="text-stone-400">No order requests found.</p>
+                      </div>
+                  ) : (
+                      <div className="space-y-4">
+                          {orders.map(order => (
+                              <div key={order.id} className="border border-stone-200 rounded-lg p-6 bg-white hover:shadow-md transition-shadow">
+                                  <div className="flex flex-col md:flex-row justify-between md:items-start gap-6">
+                                      {/* Customer Info */}
+                                      <div className="space-y-1 min-w-[200px]">
+                                          <div className="flex items-center space-x-3 mb-2">
+                                              <h4 className="font-bold text-stone-900">{order.customer.name}</h4>
+                                              <span className={`px-2 py-0.5 text-[10px] uppercase rounded-full font-bold ${order.status === 'completed' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
+                                                  {order.status}
+                                              </span>
+                                          </div>
+                                          <p className="text-sm text-stone-600">📞 {order.customer.phone}</p>
+                                          {order.customer.email && <p className="text-sm text-stone-600">✉️ {order.customer.email}</p>}
+                                          <p className="text-xs text-stone-400 mt-2">Date: {new Date(order.created_at).toLocaleDateString()}</p>
+                                          {order.customer.message && (
+                                              <div className="mt-3 p-3 bg-stone-50 rounded text-xs text-stone-600 italic">
+                                                  "{order.customer.message}"
+                                              </div>
+                                          )}
+                                      </div>
+
+                                      {/* Items */}
+                                      <div className="flex-1 bg-stone-50 p-4 rounded-lg">
+                                          <ul className="space-y-2 mb-3">
+                                              {order.items.map((item, idx) => (
+                                                  <li key={idx} className="flex justify-between text-sm text-stone-700 border-b border-stone-200/50 pb-1 last:border-0">
+                                                      <span>{item.name} <span className="text-stone-400 font-mono">x{item.quantity}</span></span>
+                                                      <span>€{(item.price * item.quantity).toFixed(2)}</span>
+                                                  </li>
+                                              ))}
+                                          </ul>
+                                          <div className="flex justify-between text-base font-bold text-stone-900 border-t border-stone-200 pt-2">
+                                              <span>Total Estimate</span>
+                                              <span>€{order.total.toFixed(2)}</span>
+                                          </div>
+                                      </div>
+
+                                      {/* Actions */}
+                                      <div className="flex flex-col space-y-2">
+                                          <button 
+                                            onClick={() => toggleOrderStatus(order)}
+                                            className={`px-4 py-2 text-xs uppercase font-bold rounded border transition-colors ${order.status === 'completed' ? 'bg-stone-100 text-stone-500 border-stone-200' : 'bg-stone-900 text-white border-stone-900 hover:bg-gold-500'}`}
+                                          >
+                                              {order.status === 'completed' ? 'Mark Pending' : 'Mark Done'}
+                                          </button>
+                                          <a 
+                                            href={`tel:${order.customer.phone}`}
+                                            className="px-4 py-2 text-xs uppercase font-bold rounded border border-stone-300 text-stone-700 hover:bg-stone-100 text-center"
+                                          >
+                                              Call
+                                          </a>
+                                      </div>
+                                  </div>
+                              </div>
+                          ))}
+                      </div>
+                  )}
+              </div>
+          )}
 
           {activeTab === 'inventory' && (
             <div className="p-8 max-w-4xl mx-auto space-y-12">
@@ -345,6 +458,21 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     </div>
 
                     <form onSubmit={handleSubmit} className="space-y-6">
+                        {/* ID Field - Manual Input */}
+                        <div className="space-y-2">
+                            <label className="text-xs uppercase font-bold tracking-widest text-stone-500">Item ID / SKU</label>
+                            <input 
+                                name="id"
+                                value={productForm.id}
+                                onChange={handleInputChange}
+                                disabled={!!editingId} // Disable editing ID once created
+                                type="text" 
+                                className={`w-full p-3 border border-stone-200 outline-none transition-colors ${editingId ? 'bg-stone-100 text-stone-500 cursor-not-allowed' : 'bg-white focus:border-stone-900'}`}
+                                placeholder="Leave empty to auto-generate (e.g. A001, NECK-25)"
+                            />
+                            {!editingId && <p className="text-[10px] text-stone-400">If left empty, a system ID will be generated.</p>}
+                        </div>
+
                         {/* Name & Price */}
                         <div className="grid grid-cols-2 gap-6">
                             <div className="space-y-2">
@@ -503,6 +631,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         <table className="w-full text-left text-sm text-stone-600">
                             <thead className="bg-stone-50 text-xs uppercase tracking-widest font-bold text-stone-500">
                                 <tr>
+                                    <th className="p-4">ID</th>
                                     <th className="p-4">Product</th>
                                     <th className="p-4">Category</th>
                                     <th className="p-4">Price</th>
@@ -512,6 +641,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                             <tbody className="divide-y divide-stone-100">
                                 {products.map(p => (
                                     <tr key={p.id} className="hover:bg-stone-50/50 transition-colors group">
+                                        <td className="p-4 font-mono text-xs text-stone-400 select-all">{p.id}</td>
                                         <td className="p-4">
                                             <div className="flex items-center space-x-4">
                                                 <img src={p.image} alt={p.name} className="w-10 h-10 rounded object-cover bg-stone-100" />
