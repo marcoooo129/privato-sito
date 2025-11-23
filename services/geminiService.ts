@@ -5,9 +5,12 @@ import { Product } from "../types";
 let chatSession: Chat | null = null;
 
 const getAIClient = () => {
-  const apiKey = process.env.API_KEY;
+  // Support for Vite environment variables (VITE_API_KEY) and standard process.env
+  // Vercel injects VITE_ prefixed variables into the client bundle
+  const apiKey = import.meta.env.VITE_API_KEY || process.env.API_KEY;
+  
   if (!apiKey) {
-    console.error("API Key not found in environment variables");
+    console.error("API Key not found. Please set VITE_API_KEY in your Vercel project settings.");
     return null;
   }
   return new GoogleGenAI({ apiKey });
@@ -52,7 +55,11 @@ export const sendMessageToGemini = async (message: string, products: Product[]):
   
   // Re-init if null (should be handled above but for safety)
   if (!chatSession) {
-     throw new Error("Failed to initialize AI session");
+     // If initChat failed (e.g. no API key), yield an error message
+     async function* errorGenerator() {
+         yield "Unable to connect to the Stylist service. Please check the API configuration.";
+     }
+     return errorGenerator();
   }
 
   // Generator function to yield text chunks
