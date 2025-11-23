@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Header } from './components/Header';
 import { Hero } from './components/Hero';
@@ -6,6 +7,7 @@ import { AIStylist } from './components/AIStylist';
 import { CartSidebar } from './components/CartSidebar';
 import { AdminDashboard } from './components/AdminDashboard';
 import { Checkout } from './components/Checkout';
+import { ProductDetail } from './components/ProductDetail';
 import { PRODUCTS, FALLBACK_IMAGE } from './constants';
 import { Product, CartItem } from './types';
 
@@ -28,6 +30,9 @@ const App: React.FC = () => {
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isAdminOpen, setIsAdminOpen] = useState(false);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+  
+  // State for selected product (Detail Modal)
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
   // Persist products to localStorage whenever they change
   useEffect(() => {
@@ -81,8 +86,12 @@ const App: React.FC = () => {
 
       <main className="flex-grow">
         <Hero />
-        {/* Pass the dynamic products state instead of the constant */}
-        <ProductGrid products={products} onAddToCart={addToCart} />
+        {/* Pass the dynamic products state and the click handler */}
+        <ProductGrid 
+          products={products} 
+          onAddToCart={addToCart} 
+          onProductClick={setSelectedProduct}
+        />
         
         {/* Brand Story Section */}
         <section id="about" className="py-24 bg-white text-center scroll-mt-24">
@@ -138,6 +147,12 @@ const App: React.FC = () => {
         onClose={() => setIsCheckoutOpen(false)}
         items={cartItems}
         onComplete={handleOrderComplete}
+      />
+
+      <ProductDetail
+        product={selectedProduct}
+        onClose={() => setSelectedProduct(null)}
+        onAddToCart={addToCart}
       />
 
       {/* Pass dynamic products to AI Stylist so it knows about new items */}

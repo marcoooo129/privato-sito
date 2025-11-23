@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Product } from '../types';
 import { CURRENCY, FALLBACK_IMAGE } from '../constants';
@@ -5,9 +6,10 @@ import { CURRENCY, FALLBACK_IMAGE } from '../constants';
 interface ProductGridProps {
   products: Product[];
   onAddToCart: (product: Product) => void;
+  onProductClick: (product: Product) => void;
 }
 
-export const ProductGrid: React.FC<ProductGridProps> = ({ products, onAddToCart }) => {
+export const ProductGrid: React.FC<ProductGridProps> = ({ products, onAddToCart, onProductClick }) => {
   
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
     e.currentTarget.src = FALLBACK_IMAGE;
@@ -24,7 +26,11 @@ export const ProductGrid: React.FC<ProductGridProps> = ({ products, onAddToCart 
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12 lg:gap-16">
           {products.map((product) => (
-            <div key={product.id} className="group cursor-pointer">
+            <div 
+              key={product.id} 
+              className="group cursor-pointer"
+              onClick={() => onProductClick(product)}
+            >
               <div className="relative overflow-hidden aspect-[4/5] bg-stone-100 mb-6">
                  {/* Image */}
                 <img 
