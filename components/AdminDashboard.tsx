@@ -434,9 +434,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                       <div className="flex-1 bg-stone-50 p-4 rounded-lg">
                                           <ul className="space-y-2 mb-3">
                                               {order.items?.map((item, idx) => (
-                                                  <li key={idx} className="flex justify-between text-sm text-stone-700 border-b border-stone-200/50 pb-1 last:border-0">
-                                                      <span>{item.name} <span className="text-stone-400 font-mono">x{item.quantity}</span></span>
-                                                      <span>€{(item.price * item.quantity).toFixed(2)}</span>
+                                                  <li key={idx} className="flex justify-between items-start text-sm text-stone-700 border-b border-stone-200/50 pb-2 last:border-0 last:pb-0">
+                                                      <div>
+                                                          <div className="font-medium text-stone-800">{item.name} <span className="text-stone-400 font-mono text-xs">x{item.quantity}</span></div>
+                                                          <div className="text-[10px] text-stone-400 font-mono mt-0.5">ID: {item.id}</div>
+                                                      </div>
+                                                      <span className="font-mono">€{(item.price * item.quantity).toFixed(2)}</span>
                                                   </li>
                                               ))}
                                           </ul>
