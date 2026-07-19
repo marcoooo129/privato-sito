@@ -1,32 +1,32 @@
 import React, { useState } from 'react';
-import { STORE_NAME } from '../constants';
+import { copy, Language } from '../i18n';
 
 interface HeaderProps {
   cartCount: number;
   onOpenCart: () => void;
+  language: Language;
+  onLanguageChange: (language: Language) => void;
 }
 
-const navItems = [
-  { href: '#collezione', label: 'Collezione' },
-  { href: '#su-misura', label: 'Su misura' },
-  { href: '#atelier', label: 'Atelier' },
-  { href: '#appuntamento', label: 'Appuntamento' },
-];
+const navHrefs = ['#collezione', '#su-misura', '#atelier', '#appuntamento'];
 
-export const Header: React.FC<HeaderProps> = ({ cartCount, onOpenCart }) => {
+export const Header: React.FC<HeaderProps> = ({ cartCount, onOpenCart, language, onLanguageChange }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const content = copy[language].header;
+  const navItems = navHrefs.map((href, index) => ({ href, label: content.nav[index] }));
+  const nextLanguage: Language = language === 'it' ? 'en' : 'it';
 
   return (
     <header className="sticky top-0 z-50 bg-paper text-ink">
       <p className="bg-wine px-4 py-2 text-center text-[11px] font-medium text-cream">
-        Fatto su misura a Firenze · Spedizione in Italia
+        {content.announcement}
       </p>
 
       <div className="mx-auto flex h-[4.5rem] max-w-[92rem] items-center justify-between border-b border-ink/10 px-5 md:px-10">
         <button
           type="button"
           className="flex min-h-11 min-w-11 items-center justify-center md:hidden"
-          aria-label={isMenuOpen ? 'Chiudi il menu' : 'Apri il menu'}
+          aria-label={isMenuOpen ? content.closeMenu : content.openMenu}
           aria-expanded={isMenuOpen}
           aria-controls="mobile-navigation"
           onClick={() => setIsMenuOpen((open) => !open)}
@@ -42,7 +42,7 @@ export const Header: React.FC<HeaderProps> = ({ cartCount, onOpenCart }) => {
           )}
         </button>
 
-        <nav className="hidden items-center gap-7 text-xs font-medium uppercase md:flex" aria-label="Navigazione principale">
+        <nav className="hidden items-center gap-7 text-xs font-medium uppercase md:flex" aria-label={content.mainNav}>
           {navItems.slice(0, 2).map((item) => (
             <a key={item.href} href={item.href} className="transition-colors hover:text-wine">
               {item.label}
@@ -50,13 +50,13 @@ export const Header: React.FC<HeaderProps> = ({ cartCount, onOpenCart }) => {
           ))}
         </nav>
 
-        <a href="#top" className="absolute left-1/2 -translate-x-1/2 text-center" aria-label={`${STORE_NAME}, torna all'inizio`}>
+        <a href="#top" className="absolute left-1/2 -translate-x-1/2 text-center" aria-label={content.home}>
           <span className="block font-display text-2xl leading-none md:text-3xl">NOVE</span>
           <span className="mt-1 block text-[9px] font-semibold uppercase">Firenze</span>
         </a>
 
         <div className="flex items-center gap-3 md:gap-7">
-          <nav className="hidden items-center gap-7 text-xs font-medium uppercase md:flex" aria-label="Servizi">
+          <nav className="hidden items-center gap-7 text-xs font-medium uppercase md:flex" aria-label={content.servicesNav}>
             {navItems.slice(2).map((item) => (
               <a key={item.href} href={item.href} className="transition-colors hover:text-wine">
                 {item.label}
@@ -65,9 +65,18 @@ export const Header: React.FC<HeaderProps> = ({ cartCount, onOpenCart }) => {
           </nav>
           <button
             type="button"
+            onClick={() => onLanguageChange(nextLanguage)}
+            className="flex min-h-11 min-w-11 items-center justify-center text-xs font-semibold uppercase transition-colors hover:text-wine"
+            aria-label={content.switchLanguage}
+            lang={nextLanguage}
+          >
+            {nextLanguage.toUpperCase()}
+          </button>
+          <button
+            type="button"
             onClick={onOpenCart}
             className="flex min-h-11 items-center gap-2 px-1 text-xs font-semibold uppercase transition-colors hover:text-wine"
-            aria-label={`Apri la selezione, ${cartCount} ${cartCount === 1 ? 'articolo' : 'articoli'}`}
+            aria-label={content.selection(cartCount)}
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" className="size-5" aria-hidden="true">
               <path d="M5.5 8.5h13l-1 12h-11l-1-12Z" strokeWidth="1.4" />
@@ -81,7 +90,7 @@ export const Header: React.FC<HeaderProps> = ({ cartCount, onOpenCart }) => {
       <nav
         id="mobile-navigation"
         className={`${isMenuOpen ? 'grid' : 'hidden'} border-b border-ink/10 bg-paper px-6 py-5 md:hidden`}
-        aria-label="Navigazione mobile"
+        aria-label={content.mobileNav}
       >
         {navItems.map((item) => (
           <a

@@ -1,17 +1,20 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Product } from '../types';
 import { CURRENCY, FALLBACK_IMAGE } from '../constants';
+import { copy, Language } from '../i18n';
 
 interface ProductDetailProps {
   product: Product | null;
   onClose: () => void;
   onAddToCart: (product: Product, quantity: number) => void;
+  language: Language;
 }
 
-export const ProductDetail: React.FC<ProductDetailProps> = ({ product, onClose, onAddToCart }) => {
+export const ProductDetail: React.FC<ProductDetailProps> = ({ product, onClose, onAddToCart, language }) => {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [quantity, setQuantity] = useState(1);
   const [isAdded, setIsAdded] = useState(false);
+  const content = copy[language].detail;
 
   useEffect(() => {
     setQuantity(1);
@@ -45,7 +48,7 @@ export const ProductDetail: React.FC<ProductDetailProps> = ({ product, onClose, 
           type="button"
           onClick={onClose}
           className="absolute right-4 top-4 z-10 flex size-11 items-center justify-center bg-paper text-ink md:right-6 md:top-6"
-          aria-label="Chiudi i dettagli"
+          aria-label={content.close}
           autoFocus
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" className="size-6" aria-hidden="true">
@@ -66,29 +69,29 @@ export const ProductDetail: React.FC<ProductDetailProps> = ({ product, onClose, 
         </div>
 
         <div className="flex flex-col p-7 md:p-12 lg:p-16">
-          <p className="text-xs font-semibold uppercase text-wine">{product.category}</p>
+          <p className="text-xs font-semibold uppercase text-wine">{copy[language].categories[product.category]}</p>
           <h2 id="product-title" className="mt-3 font-display text-4xl leading-none md:text-5xl">{product.name}</h2>
-          <p className="mt-5 text-xl tabular-nums">A partire da {CURRENCY}{product.price}</p>
+          <p className="mt-5 text-xl tabular-nums">{content.startingAt} {CURRENCY}{product.price}</p>
           <p className="mt-7 text-pretty leading-7 text-ink/65">{product.description}</p>
 
           <dl className="mt-8 border-y border-ink/15 py-5 text-sm">
             <div className="flex justify-between gap-4">
-              <dt className="font-semibold">Materiale</dt>
+              <dt className="font-semibold">{content.material}</dt>
               <dd className="text-right text-ink/65">{product.material}</dd>
             </div>
             <div className="mt-4 flex justify-between gap-4">
-              <dt className="font-semibold">Realizzazione</dt>
-              <dd className="text-right text-ink/65">Su ordinazione · 3–5 settimane</dd>
+              <dt className="font-semibold">{content.production}</dt>
+              <dd className="text-right text-ink/65">{content.productionValue}</dd>
             </div>
           </dl>
 
           <div className="mt-auto pt-9">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-semibold">Quantità</span>
+              <span className="text-sm font-semibold">{content.quantity}</span>
               <div className="flex items-center border border-ink/20">
-                <button type="button" className="flex size-11 items-center justify-center" aria-label="Riduci quantità" onClick={() => setQuantity((value) => Math.max(1, value - 1))}>−</button>
+                <button type="button" className="flex size-11 items-center justify-center" aria-label={content.decrease} onClick={() => setQuantity((value) => Math.max(1, value - 1))}>−</button>
                 <span className="w-9 text-center text-sm tabular-nums" aria-live="polite">{quantity}</span>
-                <button type="button" className="flex size-11 items-center justify-center" aria-label="Aumenta quantità" onClick={() => setQuantity((value) => value + 1)}>+</button>
+                <button type="button" className="flex size-11 items-center justify-center" aria-label={content.increase} onClick={() => setQuantity((value) => value + 1)}>+</button>
               </div>
             </div>
             <button
@@ -97,9 +100,9 @@ export const ProductDetail: React.FC<ProductDetailProps> = ({ product, onClose, 
               className="mt-5 min-h-12 w-full bg-ink px-5 text-xs font-semibold uppercase text-paper transition-colors hover:bg-wine"
               aria-live="polite"
             >
-              {isAdded ? 'Aggiunto alla selezione' : `Aggiungi · ${CURRENCY}${product.price * quantity}`}
+              {isAdded ? content.added : `${content.add} · ${CURRENCY}${product.price * quantity}`}
             </button>
-            <p className="mt-4 text-center text-xs text-ink/55">Personalizzazione definita dopo la richiesta</p>
+            <p className="mt-4 text-center text-xs text-ink/55">{content.note}</p>
           </div>
         </div>
       </div>

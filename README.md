@@ -1,6 +1,6 @@
 # NOVE Firenze
 
-Demo website for a contemporary made-to-measure jewelry atelier in Firenze. The experience is focused on the collection, the three-step custom process and appointment requests.
+Italian/English demo website for a contemporary made-to-measure jewelry atelier in Firenze. The experience is focused on the collection, the three-step custom process and appointment requests.
 
 ## Local development
 
