@@ -1,20 +1,14 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# NOVE Firenze
 
-# Run and deploy your AI Studio app
+Demo website for a contemporary made-to-measure jewelry atelier in Firenze. The experience is focused on the collection, the three-step custom process and appointment requests.
 
-This contains everything you need to run your app locally.
+## Local development
 
-View your app in AI Studio: https://ai.studio/apps/drive/12papJAPSRcbetjLLM3EgUVWE4yAaRPEB
+```bash
+npm install
+npm run dev
+```
 
-## Run Locally
+Create a production build with `npm run build`.
 
-**Prerequisites:**  Node.js
-
-
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+Editorial photography is stored locally in `public/images`; source details are listed in [IMAGE_SOURCES.md](./IMAGE_SOURCES.md).

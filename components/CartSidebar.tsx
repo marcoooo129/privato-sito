@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { CartItem } from '../types';
 import { CURRENCY, FALLBACK_IMAGE } from '../constants';
 
@@ -11,68 +11,90 @@ interface CartSidebarProps {
 }
 
 export const CartSidebar: React.FC<CartSidebarProps> = ({ isOpen, onClose, items, onRemove, onCheckout }) => {
-  const total = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  const dialogRef = useRef<HTMLDialogElement>(null);
+  const total = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
-  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
-    e.currentTarget.src = FALLBACK_IMAGE;
-    e.currentTarget.onerror = null;
-  };
-
-  if (!isOpen) return null;
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    if (!dialog) return;
+    if (isOpen && !dialog.open) dialog.showModal();
+    if (!isOpen && dialog.open) dialog.close();
+  }, [isOpen]);
 
   return (
-    <div className="fixed inset-0 z-[60] flex justify-end">
-      <div className="absolute inset-0 bg-black/20 backdrop-blur-sm transition-opacity" onClick={onClose} />
-      
-      <div className="relative w-full max-w-md bg-white h-full shadow-2xl flex flex-col animate-slide-in-right">
-        <div className="p-6 border-b border-stone-100 flex justify-between items-center">
-          <h2 className="font-serif text-xl">Shopping Bag</h2>
-          <button onClick={onClose} className="text-stone-400 hover:text-stone-900">Close</button>
+    <dialog
+      ref={dialogRef}
+      className="drawer-dialog"
+      onCancel={(event) => {
+        event.preventDefault();
+        onClose();
+      }}
+      onClick={(event) => {
+        if (event.target === dialogRef.current) onClose();
+      }}
+      aria-labelledby="selection-title"
+    >
+      <div className="flex h-full w-[min(30rem,100vw)] flex-col bg-paper">
+        <div className="flex items-center justify-between border-b border-ink/15 px-6 py-5">
+          <div>
+            <p className="text-[11px] font-semibold uppercase text-wine">La tua selezione</p>
+            <h2 id="selection-title" className="mt-1 font-display text-3xl">Gioielli scelti</h2>
+          </div>
+          <button type="button" onClick={onClose} className="flex size-11 items-center justify-center" aria-label="Chiudi la selezione">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" className="size-6" aria-hidden="true">
+              <path d="M5 5l14 14M19 5 5 19" strokeWidth="1.5" />
+            </svg>
+          </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-6 space-y-8">
+        <div className="flex-1 overflow-y-auto p-6">
           {items.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full text-stone-400">
-              <p>Your bag is empty.</p>
+            <div className="flex h-full flex-col items-center justify-center text-center">
+              <p className="font-display text-3xl">La selezione è vuota.</p>
+              <p className="mt-3 max-w-xs text-sm leading-6 text-ink/60">Scegli una forma dalla collezione: la personalizzeremo insieme.</p>
+              <button type="button" onClick={onClose} className="mt-7 min-h-11 border border-ink px-5 text-xs font-semibold uppercase hover:bg-ink hover:text-paper">Continua a esplorare</button>
             </div>
           ) : (
-            items.map((item) => (
-              <div key={item.id} className="flex gap-4 animate-fade-in-up">
-                <img 
-                  src={item.image} 
-                  alt={item.name} 
-                  onError={handleImageError}
-                  className="w-20 h-24 object-cover bg-stone-100" 
-                />
-                <div className="flex-1">
-                  <div className="flex justify-between items-start">
-                    <h3 className="font-serif text-base text-stone-900">{item.name}</h3>
-                    <button onClick={() => onRemove(item.id)} className="text-xs text-stone-400 hover:text-red-500">REMOVE</button>
+            <ul className="space-y-7">
+              {items.map((item) => (
+                <li key={item.id} className="flex gap-4 border-b border-ink/10 pb-7">
+                  <img
+                    src={item.image}
+                    alt=""
+                    className="size-24 shrink-0 object-cover"
+                    onError={(event) => {
+                      event.currentTarget.src = FALLBACK_IMAGE;
+                      event.currentTarget.onerror = null;
+                    }}
+                  />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-start justify-between gap-3">
+                      <h3 className="font-display text-xl">{item.name}</h3>
+                      <button type="button" onClick={() => onRemove(item.id)} className="min-h-11 px-1 text-xs underline underline-offset-4" aria-label={`Rimuovi ${item.name}`}>Rimuovi</button>
+                    </div>
+                    <p className="mt-1 text-xs text-ink/55">{item.material}</p>
+                    <div className="mt-4 flex justify-between text-sm">
+                      <span>Quantità {item.quantity}</span>
+                      <span className="tabular-nums">{CURRENCY}{item.price * item.quantity}</span>
+                    </div>
                   </div>
-                  <p className="text-xs text-stone-500 mt-1 uppercase tracking-wide">{item.category}</p>
-                  <p className="text-sm font-medium mt-2">{CURRENCY}{item.price}</p>
-                  <p className="text-xs text-stone-400 mt-2">Qty: {item.quantity}</p>
-                </div>
-              </div>
-            ))
+                </li>
+              ))}
+            </ul>
           )}
         </div>
 
         {items.length > 0 && (
-          <div className="p-6 border-t border-stone-100 bg-stone-50">
-            <div className="flex justify-between items-center mb-4">
-              <span className="text-sm uppercase tracking-widest text-stone-600">Subtotal</span>
-              <span className="font-serif text-xl">{CURRENCY}{total.toFixed(2)}</span>
+          <div className="border-t border-ink/15 bg-cream p-6">
+            <div className="flex justify-between text-sm">
+              <span>Valore indicativo</span>
+              <span className="font-display text-2xl tabular-nums">{CURRENCY}{total}</span>
             </div>
-            <button 
-              onClick={onCheckout}
-              className="w-full bg-stone-900 text-white py-4 text-xs uppercase tracking-[0.2em] hover:bg-gold-500 transition-colors"
-            >
-              Invia Richiesta Ordine
-            </button>
+            <p className="mt-3 text-xs leading-5 text-ink/55">Il prezzo finale dipende da misure, metalli, pietre e personalizzazione.</p>
+            <button type="button" onClick={onCheckout} className="mt-5 min-h-12 w-full bg-ink px-5 text-xs font-semibold uppercase text-paper transition-colors hover:bg-wine">Richiedi disponibilità</button>
           </div>
         )}
       </div>
-    </div>
+    </dialog>
   );
 };
